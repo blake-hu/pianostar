@@ -13,11 +13,20 @@
 
 #include "microbit_v2.h"
 
+// define custom structs
+typedef struct {
+  uint16_t frequency;
+  float volume;
+} pianostar_note_t;
+// Maximum number of notes that can play at the same time
+#define PIANOSTAR_MAX_NOTES 8
+pianostar_note_t notes_playing[PIANOSTAR_MAX_NOTES] = {0};
+
 // PWM configuration
 static const nrfx_pwm_t PWM_INST = NRFX_PWM_INSTANCE(0);
 
 // Holds a pre-computed sine wave
-#define SINE_BUFFER_SIZE 500
+#define SINE_BUFFER_SIZE 1000
 uint16_t sine_buffer[SINE_BUFFER_SIZE] = {0};
 
 // Sample data configurations
@@ -58,6 +67,16 @@ static void pwm_init(void) {
   nrfx_pwm_init(&PWM_INST, &config, NULL);
 }
 
+static void pwm_play() {
+  nrf_pwm_sequence_t pwm_sequence = {
+      .values.p_common = samples,
+      .length = BUFFER_SIZE,
+      .repeats = 1,
+      .end_delay = 0,
+  };
+  nrfx_pwm_simple_playback(&PWM_INST, &pwm_sequence, 1, NRFX_PWM_FLAG_LOOP);
+}
+
 static void compute_sine_wave(uint16_t max_value) {
   for (int i = 0; i < SINE_BUFFER_SIZE; i++) {
     // what percent into the sine wave are we?
@@ -83,7 +102,7 @@ static void compute_sine_wave(uint16_t max_value) {
   }
 }
 
-static void play_note(uint16_t frequency) {
+static void _play_note(uint16_t frequency, float volume) {
 
   // determine number of sine values to "step" per played sample
   // units are (sine-values/cycle) * (cycles/second) / (samples/second) =
@@ -103,29 +122,36 @@ static void play_note(uint16_t frequency) {
   // TODO
 
   for (int step = 0; step < BUFFER_SIZE; step++) {
-    samples[step] =
-        sine_buffer[(uint16_t)(step * step_size) % SINE_BUFFER_SIZE];
+    samples[step] += (uint16_t)(sine_buffer[(uint16_t)(step * step_size) %
+                                            SINE_BUFFER_SIZE] *
+                                volume);
   }
-
-  // Create the pwm sequence (nrf_pwm_sequence_t) using the samples
-  // Do not make another buffer for this. You can reuse the sample buffer
-  // You should set a non-zero repeat value (this is how many times each
-  // _sample_ repeats)
-  nrf_pwm_sequence_t pwm_sequence = {
-      .values.p_common = samples,
-      .length = BUFFER_SIZE,
-      .repeats = 1,
-      .end_delay = 0,
-  };
-
-  // Start playback of the samples
-  // You will need to pass in a flag to loop the sound
-  // The playback count here is the number of times the entire buffer will
-  // repeat
-  //    (which doesn't matter if you set the loop flag)
-  // TODO
-  nrfx_pwm_simple_playback(&PWM_INST, &pwm_sequence, 1, NRFX_PWM_FLAG_LOOP);
 }
+
+static void _clear_notes() {
+  for (int step = 0; step < BUFFER_SIZE; step++) {
+    samples[step] = 0;
+  }
+}
+
+static void update_notes() {
+  printf("Playing notes: ");
+  _clear_notes();
+
+  for (int i = 0; i < PIANOSTAR_MAX_NOTES; i++) {
+    pianostar_note_t note = notes_playing[i];
+    if (note.frequency == 0) {
+      printf("\n");
+      return;
+    }
+    _play_note(note.frequency, note.volume);
+    printf("%i, ", note.frequency);
+  }
+}
+
+static pianostar_note_t *add_note(pianostar_note_t note) { return NULL; }
+
+static bool stop_note(pianostar_note_t *note) { return NULL; }
 
 int main(void) {
   printf("Board started!\n");
@@ -138,28 +164,29 @@ int main(void) {
 
   // compute the sine wave values
   // You should pass in COUNTERTOP-1 here as the maximum value
-  compute_sine_wave((16000000 / (SAMPLING_FREQUENCY * 2)) -
-                    1); // TODO: put a value in here
+  compute_sine_wave((16000000 / (SAMPLING_FREQUENCY * 2)) - 1);
 
-  // play_note(440);
+  pwm_play();
 
-  // nrf_delay_ms(500);
+  while (true) {
+    // alternate between 2 different octaves of C major chord
+    notes_playing[0].frequency = 1046;
+    notes_playing[0].volume = 1;
+    notes_playing[1].frequency = 1319;
+    notes_playing[1].volume = 1;
+    notes_playing[2].frequency = 1568;
+    notes_playing[2].volume = 1;
+    update_notes();
+    nrf_delay_ms(500);
+    notes_playing[0].frequency = 523;
+    notes_playing[0].volume = 1;
+    notes_playing[1].frequency = 659;
+    notes_playing[1].volume = 1;
+    notes_playing[2].frequency = 784;
+    notes_playing[2].volume = 1;
+    update_notes();
+    nrf_delay_ms(500);
+  }
 
-  // Play the C#5 tone for one second
-  // TODO
-  play_note(554);
-  nrf_delay_ms(500);
-
-  // Play the E5 tone for one second
-  // TODO
-  play_note(659);
-  nrf_delay_ms(500);
-
-  // Play the A5 tone for one second
-  // TODO
-  play_note(880);
-  // Stop all noises
-  // TODO
-  nrf_delay_ms(500);
   nrfx_pwm_stop(&PWM_INST, true);
 }
