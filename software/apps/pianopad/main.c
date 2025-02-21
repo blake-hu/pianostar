@@ -14,10 +14,20 @@
 #include "microbit_v2.h"
 
 // Analog input pin
-#define ANALOG_FSR_IN EDGE_P4
+#define ANALOG_FSR_IN NRF_SAADC_INPUT_AIN1
 
 // ADC channel configuration
 #define ADC_FSR_CHANNEL 0
+
+// Function prototypes
+static void adc_init(void);
+static float adc_sample_blocking(uint8_t channel);
+
+static void saadc_event_callback(nrfx_saadc_evt_t const *_unused)
+{
+  // don't care about saadc events
+  // ignore this function
+}
 
 static void adc_init(void)
 {
@@ -29,11 +39,16 @@ static void adc_init(void)
       .low_power_mode = false,
   };
   ret_code_t error_code = nrfx_saadc_init(&saadc_config, saadc_event_callback);
+  printf("saadc init error code: %ld\n", error_code);
   APP_ERROR_CHECK(error_code);
+
+  printf("pizza\n");
 
   // Initialize FSR channel
   nrf_saadc_channel_config_t fsr_channel_config = NRFX_SAADC_DEFAULT_CHANNEL_CONFIG_SE(ANALOG_FSR_IN);
+  printf("banana\n");
   error_code = nrfx_saadc_channel_init(ADC_FSR_CHANNEL, &fsr_channel_config);
+  printf("saadc channel error code: %ld\n", error_code);
   APP_ERROR_CHECK(error_code);
 }
 
