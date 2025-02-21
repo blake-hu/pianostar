@@ -14,9 +14,10 @@
 #include "microbit_v2.h"
 
 #define PIANOSTAR_MAX_NOTES 8
-#define SINE_BUFFER_SIZE 1000
-#define SAMPLING_FREQUENCY 16000 // 16 kHz sampling rate
-#define BUFFER_SIZE 16000        // one second worth of data
+#define SINE_BUFFER_SIZE 5000
+#define SAMPLING_FREQUENCY 32000 // 16 kHz sampling rate
+#define BUFFER_SIZE 32000        // one second worth of data
+#define REPEATS 0
 
 typedef struct {
   uint16_t frequency;
