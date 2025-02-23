@@ -14,10 +14,14 @@
 #include "microbit_v2.h"
 
 // Analog input pin
-#define ANALOG_FSR_IN NRF_SAADC_INPUT_AIN1
+#define ANALOG_FSR_IN_0 NRF_SAADC_INPUT_AIN0
+#define ANALOG_FSR_IN_1 NRF_SAADC_INPUT_AIN1
+#define ANALOG_FSR_IN_2 NRF_SAADC_INPUT_AIN2
 
 // ADC channel configuration
-#define ADC_FSR_CHANNEL 0
+#define ADC_FSR_CHANNEL_0 0
+#define ADC_FSR_CHANNEL_1 1
+#define ADC_FSR_CHANNEL_2 2
 
 // Function prototypes
 static void adc_init(void);
@@ -42,13 +46,15 @@ static void adc_init(void)
   printf("saadc init error code: %ld\n", error_code);
   APP_ERROR_CHECK(error_code);
 
-  printf("pizza\n");
-
   // Initialize FSR channel
-  nrf_saadc_channel_config_t fsr_channel_config = NRFX_SAADC_DEFAULT_CHANNEL_CONFIG_SE(ANALOG_FSR_IN);
-  printf("banana\n");
-  error_code = nrfx_saadc_channel_init(ADC_FSR_CHANNEL, &fsr_channel_config);
-  printf("saadc channel error code: %ld\n", error_code);
+  nrf_saadc_channel_config_t fsr_channel_config_0 = NRFX_SAADC_DEFAULT_CHANNEL_CONFIG_SE(ANALOG_FSR_IN_0);
+  nrf_saadc_channel_config_t fsr_channel_config_1 = NRFX_SAADC_DEFAULT_CHANNEL_CONFIG_SE(ANALOG_FSR_IN_1);
+  nrf_saadc_channel_config_t fsr_channel_config_2 = NRFX_SAADC_DEFAULT_CHANNEL_CONFIG_SE(ANALOG_FSR_IN_2);
+  error_code = nrfx_saadc_channel_init(ADC_FSR_CHANNEL_0, &fsr_channel_config_0);
+  APP_ERROR_CHECK(error_code);
+  error_code = nrfx_saadc_channel_init(ADC_FSR_CHANNEL_1, &fsr_channel_config_1);
+  APP_ERROR_CHECK(error_code);
+  error_code = nrfx_saadc_channel_init(ADC_FSR_CHANNEL_2, &fsr_channel_config_2);
   APP_ERROR_CHECK(error_code);
 }
 
@@ -59,8 +65,6 @@ static float adc_sample_blocking(uint8_t channel)
   int16_t adc_counts = 0;
   ret_code_t error_code = nrfx_saadc_sample_convert(channel, &adc_counts);
   APP_ERROR_CHECK(error_code);
-
-  printf("adc counts: %d\n", adc_counts);
 
   // convert ADC counts to volts
   float voltage = ((float)adc_counts / 4095) * 3.6;
@@ -78,10 +82,14 @@ int main(void)
   while (1)
   {
     // sample FSR
-    float fsr_voltage = adc_sample_blocking(ADC_FSR_CHANNEL);
-    printf("FSR voltage: %f\n", fsr_voltage);
+    float fsr_voltage_0 = adc_sample_blocking(ADC_FSR_CHANNEL_0);
+    printf("fsr 0: %f\n", fsr_voltage_0);
+    float fsr_voltage_1 = adc_sample_blocking(ADC_FSR_CHANNEL_1);
+    printf("fsr 1: %f\n", fsr_voltage_1);
+    float fsr_voltage_2 = adc_sample_blocking(ADC_FSR_CHANNEL_2);
+    printf("fsr 2: %f\n", fsr_voltage_2);
 
     // wait a little bit of time
-    nrf_delay_ms(1000);
+    nrf_delay_ms(500);
   }
 }
