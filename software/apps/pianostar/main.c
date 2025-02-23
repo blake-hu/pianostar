@@ -9,6 +9,7 @@
 
 #include "microbit_v2.h"
 #include "pwm_speaker.h"
+#include "notes.h"
 
 int main(void) {
   printf("Board started!\n");
