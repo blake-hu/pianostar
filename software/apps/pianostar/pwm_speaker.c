@@ -1,4 +1,5 @@
 #include "pwm_speaker.h"
+#include "notes.h"
 
 // Maximum number of notes that can play at the same time
 pianostar_note_t notes_playing[PIANOSTAR_MAX_NOTES] = {0};
