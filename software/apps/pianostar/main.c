@@ -29,26 +29,84 @@ int main(void) {
   while (true) {
     // Proof of concept: Alternate between 2 different octaves of C major chord
     clear_notes();
-    add_note((pianostar_note_t){261, 0.2});
+    add_note((pianostar_note_t){E4, 0.2});
     play_updated_notes();
-    nrf_delay_ms(500);
+    nrf_delay_ms(900);
 
     clear_notes();
-    add_note((pianostar_note_t){330, 0.2});
+    add_note((pianostar_note_t){D4, 0.2});
     play_updated_notes();
-    nrf_delay_ms(500);
+    nrf_delay_ms(300);
 
     clear_notes();
-    add_note((pianostar_note_t){392, 0.2});
+    add_note((pianostar_note_t){C4, 0.2});
     play_updated_notes();
-    nrf_delay_ms(500);
+    nrf_delay_ms(600);
 
     clear_notes();
-    add_note((pianostar_note_t){261, 0.2});
-    add_note((pianostar_note_t){330, 0.2});
-    add_note((pianostar_note_t){392, 0.2});
+    add_note((pianostar_note_t){D4, 0.2});
     play_updated_notes();
-    nrf_delay_ms(500);
+    nrf_delay_ms(600);
+
+    clear_notes();
+    add_note((pianostar_note_t){E4, 0.2});
+    play_updated_notes();
+    nrf_delay_ms(600);
+
+    clear_notes();
+    add_note((pianostar_note_t){E4, 0.2});
+    play_updated_notes();
+    nrf_delay_ms(600);
+
+    clear_notes();
+    add_note((pianostar_note_t){E4, 0.2});
+    play_updated_notes();
+    nrf_delay_ms(600);
+
+    clear_notes();
+    add_note((pianostar_note_t){D4, 0.2});
+    play_updated_notes();
+    nrf_delay_ms(600);
+    
+    clear_notes();
+    add_note((pianostar_note_t){D4, 0.2});
+    play_updated_notes();
+    nrf_delay_ms(600);
+
+    clear_notes();
+    add_note((pianostar_note_t){D4, 0.2});
+    play_updated_notes();
+    nrf_delay_ms(600);
+
+    clear_notes();
+    add_note((pianostar_note_t){E4, 0.2});
+    play_updated_notes();
+    nrf_delay_ms(600);
+
+    clear_notes();
+    add_note((pianostar_note_t){G4, 0.2});
+    play_updated_notes();
+    nrf_delay_ms(600);
+
+    clear_notes();
+    add_note((pianostar_note_t){G4, 0.2});
+    play_updated_notes();
+    nrf_delay_ms(600);
+    // add_note((pianostar_note_t){E4, 0.2});
+    // play_updated_notes();
+    // nrf_delay_ms(500);
+
+    // clear_notes();
+    // add_note((pianostar_note_t){G4, 0.2});
+    // play_updated_notes();
+    // nrf_delay_ms(500);
+
+    // clear_notes();
+    // add_note((pianostar_note_t){C4, 0.2});
+    // add_note((pianostar_note_t){E4, 0.2});
+    // add_note((pianostar_note_t){G4, 0.2});
+    // play_updated_notes();
+    // nrf_delay_ms(500);
   }
 
   pwm_stop();
