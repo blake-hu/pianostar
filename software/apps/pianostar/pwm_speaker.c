@@ -119,7 +119,7 @@ static void _clear_buffer() {
 /*** API for playing multiple notes ***/
 
 void play_updated_notes() {
-  printf("Playing notes: ");
+  // printf("Playing notes: ");
   _clear_buffer();
 
   for (int i = 0; i < PIANOSTAR_MAX_NOTES; i++) {
@@ -128,9 +128,9 @@ void play_updated_notes() {
       continue;
     }
     _add_note_to_buffer(note.frequency, note.volume);
-    printf("%i, ", note.frequency);
+    // printf("%i (%f) ", note.frequency, note.volume);
   }
-  printf("\n");
+  // printf("\n");
 }
 
 pianostar_note_t *add_note(pianostar_note_t new_note) {
