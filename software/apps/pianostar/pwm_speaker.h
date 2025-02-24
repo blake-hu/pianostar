@@ -27,8 +27,6 @@ void gpio_init(void);
 
 void pwm_init(void);
 
-void pwm_play();
-
 void pwm_stop();
 
 void compute_sine_wave(uint16_t max_value);
