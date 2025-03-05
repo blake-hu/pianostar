@@ -1,5 +1,5 @@
 #include "pwm_speaker.h"
-#include "notes.h"
+#include <stdint.h>
 
 // Maximum number of notes that can play at the same time
 pianostar_note_t notes_playing[PIANOSTAR_MAX_NOTES] = {0};
@@ -9,7 +9,8 @@ uint16_t sine_buffer[SINE_BUFFER_SIZE] = {0};
 
 // Sample data configurations
 // Note: this is a 32 kB buffer (about 25% of RAM)
-uint16_t samples[BUFFER_SIZE] = {0}; // stores PWM duty cycle values
+uint16_t samples[2][BUFFER_SIZE] = {{0}, {1}};
+volatile uint16_t active_buffer = 0;
 
 // PWM configuration
 const nrfx_pwm_t PWM_INST = NRFX_PWM_INSTANCE(0);
@@ -47,9 +48,9 @@ void pwm_init(void) {
   nrfx_pwm_init(&PWM_INST, &config, NULL);
 }
 
-void pwm_play() {
+static void pwm_play() {
   nrf_pwm_sequence_t pwm_sequence = {
-      .values.p_common = samples,
+      .values.p_common = samples[active_buffer],
       .length = BUFFER_SIZE,
       .repeats = REPEATS,
       .end_delay = 0,
@@ -58,6 +59,8 @@ void pwm_play() {
 }
 
 void pwm_stop() { nrfx_pwm_stop(&PWM_INST, true); }
+
+static uint16_t _inactive_buffer() { return active_buffer == 0 ? 1 : 0; }
 
 void compute_sine_wave(uint16_t max_value) {
   for (int i = 0; i < SINE_BUFFER_SIZE; i++) {
@@ -84,7 +87,8 @@ void compute_sine_wave(uint16_t max_value) {
   }
 }
 
-static void _add_note_to_buffer(uint16_t frequency, float volume) {
+static void _add_note_to_buffer(uint16_t buffer_id, uint16_t frequency,
+                                float volume) {
 
   // determine number of sine values to "step" per played sample
   // units are (sine-values/cycle) * (cycles/second) / (samples/second) =
@@ -104,33 +108,38 @@ static void _add_note_to_buffer(uint16_t frequency, float volume) {
   // TODO
 
   for (int step = 0; step < BUFFER_SIZE; step++) {
-    samples[step] += (uint16_t)(sine_buffer[(uint16_t)(step * step_size) %
-                                            SINE_BUFFER_SIZE] *
-                                volume);
+    samples[buffer_id][step] +=
+        (uint16_t)(sine_buffer[(uint16_t)(step * step_size) %
+                               SINE_BUFFER_SIZE] *
+                   volume);
   }
 }
 
-static void _clear_buffer() {
-  for (int step = 0; step < BUFFER_SIZE; step++) {
-    samples[step] = 0;
+static void _clear_buffer(uint16_t buffer_id) {
+  for (int i = 0; i < BUFFER_SIZE; i++) {
+    samples[buffer_id][i] = 0;
   }
 }
 
 /*** API for playing multiple notes ***/
 
 void play_updated_notes() {
-  // printf("Playing notes: ");
-  _clear_buffer();
+  printf("Playing notes: ");
+  uint16_t inactive_buffer = _inactive_buffer();
+  _clear_buffer(inactive_buffer);
 
   for (int i = 0; i < PIANOSTAR_MAX_NOTES; i++) {
     pianostar_note_t note = notes_playing[i];
     if (note.frequency == 0) {
       continue;
     }
-    _add_note_to_buffer(note.frequency, note.volume);
-    // printf("%i (%f) ", note.frequency, note.volume);
+    _add_note_to_buffer(inactive_buffer, note.frequency, note.volume);
+    printf("%i, ", note.frequency);
   }
-  // printf("\n");
+  printf("\n");
+
+  active_buffer = inactive_buffer;
+  pwm_play();
 }
 
 pianostar_note_t *add_note(pianostar_note_t new_note) {

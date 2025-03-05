@@ -16,7 +16,7 @@
 #define PIANOSTAR_MAX_NOTES 8
 #define SINE_BUFFER_SIZE 5000
 #define SAMPLING_FREQUENCY 32000 // 16 kHz sampling rate
-#define BUFFER_SIZE 32000        // one second worth of data
+#define BUFFER_SIZE 24000
 #define REPEATS 0
 
 typedef struct {
@@ -27,8 +27,6 @@ typedef struct {
 void gpio_init(void);
 
 void pwm_init(void);
-
-void pwm_play();
 
 void pwm_stop();
 

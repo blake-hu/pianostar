@@ -66,9 +66,6 @@ int main(void)
 	compute_sine_wave((16000000 / (SAMPLING_FREQUENCY * 2)) - 1);
 	// printf("computed sine wave\n");
 
-	pwm_play();
-	// printf("pwm play\n");
-
 	while (1)
 	{
 		// sample FSR
