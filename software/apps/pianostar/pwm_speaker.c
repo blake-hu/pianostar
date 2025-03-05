@@ -34,13 +34,14 @@ void pwm_init(void) {
   // Set the clock to 16 MHz
   // Set a countertop value based on sampling frequency and repetitions
   nrfx_pwm_config_t config = {
-      .output_pins = {SPEAKER_OUT, NRFX_PWM_PIN_NOT_USED, NRFX_PWM_PIN_NOT_USED,
+      // Connect to PIN 13 on breakout adaptor
+      .output_pins = {EDGE_P13, NRFX_PWM_PIN_NOT_USED, NRFX_PWM_PIN_NOT_USED,
                       NRFX_PWM_PIN_NOT_USED},
       .irq_priority = 4,
       .base_clock = NRF_PWM_CLK_16MHz,
       .count_mode = NRF_PWM_MODE_UP,
       // anything for now: topvalue
-      .top_value = 16000000 / (SAMPLING_FREQUENCY * 2),
+      .top_value = 16000000 / (SAMPLING_FREQUENCY * (REPEATS + 1)),
       .load_mode = NRF_PWM_LOAD_COMMON,
       .step_mode = NRF_PWM_STEP_AUTO};
 
@@ -51,7 +52,7 @@ static void pwm_play() {
   nrf_pwm_sequence_t pwm_sequence = {
       .values.p_common = samples[active_buffer],
       .length = BUFFER_SIZE,
-      .repeats = 1,
+      .repeats = REPEATS,
       .end_delay = 0,
   };
   nrfx_pwm_simple_playback(&PWM_INST, &pwm_sequence, 1, NRFX_PWM_FLAG_LOOP);
