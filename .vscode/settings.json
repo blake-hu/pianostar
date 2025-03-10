@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "pwm_speaker.h": "c",
+        "istream": "c"
+    }
+}
