@@ -1,6 +1,10 @@
 {
     "files.associations": {
+        "*.sqlbook": "sql",
+        "*.ndjson": "jsonl",
+        "*.dbclient-js": "javascript",
         "pwm_speaker.h": "c",
-        "istream": "c"
+        "istream": "c",
+        "nrfx_i2s.h": "c"
     }
 }
