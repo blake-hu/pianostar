@@ -18,11 +18,14 @@ int main(void)
   // initialize LED matrix driver
   led_matrix_init();
 
-  // call other functions here
+  // turn everything on
+  set_leds();
+  start_transfer();
 
   // loop forever
   while (1)
   {
     nrf_delay_ms(1000);
+    printf("uhhhhhhh\n");
   }
 }

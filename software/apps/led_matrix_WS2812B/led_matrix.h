@@ -5,6 +5,11 @@
 #include <string.h>
 
 // Initialize the LED matrix display
-void led_matrix_init(void);
+void led_matrix_init();
 
-// You may need to add more functions here
+// set all leds to ON
+void set_leds();
+
+// start/stop transfer
+void start_transfer();
+void stop_transfer();
