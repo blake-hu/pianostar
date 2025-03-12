@@ -1,6 +1,8 @@
 #ifndef NOTES_H
 #define NOTES_H
 
+#define NO_NOTE 0
+
 #define C3 131
 #define Cs3 139
 #define D3 147

@@ -1,4 +1,3 @@
-#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -7,89 +6,63 @@
 #include "nrf_delay.h"
 #include "nrfx_pwm.h"
 
+#include "i2c_adc.h"
 #include "microbit_v2.h"
-#include "pwm_speaker.h"
 #include "notes.h"
+#include "pwm_speaker.h"
 #include "saadc_fsr.h"
 
 const float V_TO_VOL_SCALE = 1.0 / 3.6;
 const float PLAY_THRESHOLD = 1.0;
 
-pianostar_note_t convert_fsr_to_note(uint8_t channel, float voltage) {
-	float volume = 0.0;
-	
-	if (voltage < PLAY_THRESHOLD) {
-		volume = 0;
-	} else {
-		volume = voltage * V_TO_VOL_SCALE;
-	}
-	
-	uint16_t frequency = 0;
-	switch (channel) {
-		case ADC_FSR_CHANNEL_0:
-			frequency = C4;
-			break;
-		case ADC_FSR_CHANNEL_1:
-			frequency = E4;
-			break;
-		case ADC_FSR_CHANNEL_2:
-			frequency = G4;
-			break;
-		default:
-			break;
-	}
-	pianostar_note_t note = {
-		.frequency = frequency,
-		.volume = volume
-	};
-	return note;
-}
+const uint16_t ADC_KEYMAP[NUM_ADC][NUM_ADC_CHANNELS] = {
+    {B5, As5, A5, Gs5, G5, Fs5, F5, NO_NOTE},
+    {E5, Ds5, D5, Cs5, C5, NO_NOTE, NO_NOTE, NO_NOTE},
+    {B4, As4, A4, Gs4, G4, Fs4, F4, NO_NOTE},
+    {E4, Ds4, D4, Cs4, C4, NO_NOTE, NO_NOTE, NO_NOTE},
+};
 
-int main(void)
-{
-	printf("Board started!\n");
+int main(void) {
+  printf("Board started!\n");
 
-	// init ADC
-	adc_init();
-	// printf("adc init\n");
+  // init ADC
+  adc_init();
 
-	// initialize GPIO
-	gpio_init();
-	// printf("gpio init\n");
+  i2c_init();
 
-	// initialize the PWM
-	pwm_init();
-	// printf("pwm init\n");
+  // initialize GPIO
+  gpio_init();
 
-	// compute the sine wave values
-	// You should pass in COUNTERTOP-1 here as the maximum value
-	compute_sine_wave((16000000 / (SAMPLING_FREQUENCY * 2)) - 1);
-	// printf("computed sine wave\n");
+  // initialize the PWM
+  pwm_init();
 
-	while (1)
-	{
-		// sample FSR
-		float fsr_voltage_0 = adc_sample_blocking(ADC_FSR_CHANNEL_0);
-		// printf("fsr 0: %f\n", fsr_voltage_0);
-		pianostar_note_t note_0 = convert_fsr_to_note(ADC_FSR_CHANNEL_0, fsr_voltage_0);
-		float fsr_voltage_1 = adc_sample_blocking(ADC_FSR_CHANNEL_1);
-		// printf("fsr 1: %f\n", fsr_voltage_1);
-		pianostar_note_t note_1 = convert_fsr_to_note(ADC_FSR_CHANNEL_1, fsr_voltage_1);
-		float fsr_voltage_2 = adc_sample_blocking(ADC_FSR_CHANNEL_2);
-		// printf("fsr 2: %f\n", fsr_voltage_2);
-		pianostar_note_t note_2 = convert_fsr_to_note(ADC_FSR_CHANNEL_2, fsr_voltage_2);
-		// printf("sampled fsr\n");
+  // compute the sine wave values
+  // You should pass in COUNTERTOP-1 here as the maximum value
+  compute_sine_wave((16000000 / (SAMPLING_FREQUENCY * 2)) - 1);
 
-		clear_notes();
-		// printf("cleared notes\n");
-		add_note(note_0);
-		add_note(note_1);
-		add_note(note_2);
-		// printf("added notes\n");
-		play_updated_notes();
-		// printf("play notes\n");
-		nrf_delay_ms(200);
-	}
+  while (1) {
 
-	pwm_stop();
+    clear_notes();
+
+    for (int adc = 0; adc < NUM_ADC; adc++) {
+      for (int chan = 0; chan < NUM_ADC_CHANNELS; chan++) {
+        uint16_t freq = ADC_KEYMAP[adc][chan];
+        if (freq == NO_NOTE) {
+          break;
+        }
+        uint8_t value = i2c_adc_read(adc, chan);
+        float voltage = ((float)value / 255) * 3.6;
+        if (voltage > PLAY_THRESHOLD) {
+          pianostar_note_t note = {freq, voltage * V_TO_VOL_SCALE};
+          add_note(note);
+          printf("%u\n", freq);
+        }
+      }
+    }
+
+    play_updated_notes();
+    nrf_delay_ms(50);
+  }
+
+  pwm_stop();
 }

@@ -171,6 +171,24 @@ bool set_note_volume(pianostar_note_t *note, float volume) {
   return true;
 }
 
+void normalize_note_volume() {
+  float total_volume = 0.0;
+  for (int i = 0; i < PIANOSTAR_MAX_NOTES; i++) {
+    pianostar_note_t note = notes_playing[i];
+    if (note.frequency > 0) {
+      total_volume += note.volume;
+    }
+  }
+
+  float scaling_factor = MAX_VOLUME / total_volume;
+  for (int i = 0; i < PIANOSTAR_MAX_NOTES; i++) {
+    pianostar_note_t note = notes_playing[i];
+    if (note.frequency > 0) {
+      note.volume *= scaling_factor;
+    }
+  }
+}
+
 void clear_notes() {
   for (int i = 0; i < PIANOSTAR_MAX_NOTES; i++) {
     notes_playing[i].frequency = 0;
