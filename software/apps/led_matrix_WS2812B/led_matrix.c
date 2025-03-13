@@ -4,8 +4,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "nrfx_i2s.h"
-
 #include "led_matrix.h"
 #include "microbit_v2.h"
 
