@@ -62,3 +62,6 @@ works pretty well for this.
 $ pyserial-miniterm /dev/ttyACM0 38400
 ```
 
+# piano star 
+
+/Users/azl/Desktop/Northwestern/Classes/10-Classes-Senior-Winter/ce346/nu-microbit-base/software/nrf52x-base/make/config/nrf52833/config/sdk_config.h
