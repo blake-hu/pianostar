@@ -11,54 +11,47 @@
 #include "piano_matrix.h"
 #include "microbit_v2.h"
 
+/**
+ * output pin
+ */
 uint32_t OUTPUT_PIN = 15;
 
-APP_TIMER_DEF(period_timer);
-APP_TIMER_DEF(low_timer);
-
-/*
-freq = ticks/second
-1 second = 1e6 us = 1,000,000 us
-
-convert from ticks/second to ticks/us
-ticks/us = ticks/second / 1,000,000
-ticks/us = freq / 1,000,000
-
-
-*/
-
-// period is 1.25 us
-// 1 bit is high for 0.8 us
-// 0 bit is high for 0.4 us
-
+/**
+ * timing constants
+ */
 // these are in us
-static float PERIOD_LEN = 1.25;
-static float ONE_BIT_LEN = 0.8;
-static float ZERO_BIT_LEN = 0.4;
+float PERIOD_LEN = 1.25;
+float ONE_BIT_LEN = 0.8;
+float ZERO_BIT_LEN = 0.4;
+float RESET_LEN = 50;
 
-static uint32_t PERIOD_TICKS = 1000;
-static uint32_t ONE_BIT_TICKS = 500;
-static uint32_t ZERO_BIT_TICKS = 100;
-static uint32_t RESET_TICKS = 1000;
+float TICKS_PER_us = 16; // 16 ticks/us
 
-static uint32_t NUM_LEDS = 256;
-static uint32_t BITS_PER_LED = 24;
-static uint32_t *buffer;
+float PERIOD_TICKS = TICKS_PER_us * PERIOD_LEN;
+float ONE_BIT_TICKS = TICKS_PER_us * ONE_BIT_LEN;
+float ZERO_BIT_TICKS = TICKS_PER_us * ZERO_BIT_LEN;
+float RESET_TICKS = TICKS_PER_us * RESET_LEN;
+
+/**
+ * led matrix constants
+ */
+uint32_t NUM_LEDS = 256;
+uint32_t BITS_PER_LED = 24;
+uint32_t *buffer;
 volatile uint32_t current_bit = 0;
 volatile uint32_t current_led = 0;
 
-void handle_period_end(void *_unused);
-void handle_drive_low(void *_unused);
+/**
+ * forward declarations
+ */
+void handle_period_end(void);
+void handle_low_end(void);
 void drive_high(void);
 void drive_low(void);
 
-void led_matrix_init(void)
-{
-  // set gpio pin to output
-  nrf_gpio_pin_dir_set(OUTPUT_PIN, NRF_GPIO_PIN_DIR_OUTPUT);
-  nrf_gpio_pin_clear(OUTPUT_PIN);
-}
-
+/**
+ * timer stuff
+ */
 void timer_init(void)
 {
   // clear timers
@@ -133,6 +126,16 @@ void TIMER4_IRQHandler(void)
   handle_low_end();
 }
 
+/**
+ * LED matrix stuff
+ */
+void led_matrix_init(void)
+{
+  // set gpio pin to output
+  nrf_gpio_pin_dir_set(OUTPUT_PIN, NRF_GPIO_PIN_DIR_OUTPUT);
+  nrf_gpio_pin_clear(OUTPUT_PIN);
+}
+
 void drive_high(void)
 {
   nrf_gpio_pin_write(OUTPUT_PIN, 1);
@@ -185,7 +188,7 @@ void handle_period_end(void)
   }
 }
 
-void handle_low_end(void *_unused)
+void handle_low_end(void)
 {
   drive_low();
 }
