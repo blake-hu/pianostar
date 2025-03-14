@@ -39,6 +39,7 @@ static float ZERO_BIT_LEN = 0.4;
 static uint32_t PERIOD_TICKS = 1000;
 static uint32_t ONE_BIT_TICKS = 500;
 static uint32_t ZERO_BIT_TICKS = 100;
+static uint32_t RESET_TICKS = 1000;
 
 static uint32_t NUM_LEDS = 256;
 static uint32_t BITS_PER_LED = 24;
@@ -77,11 +78,6 @@ void timer_init(void)
   NRF_TIMER4->INTENSET = 1 << 17; // COMPARE[1]
   NVIC_EnableIRQ(TIMER3_IRQn);
   NVIC_EnableIRQ(TIMER4_IRQn);
-
-  // set up new timer to drive pin high every X ticks
-  // app_timer_init();
-  // app_timer_create(&period_timer, APP_TIMER_MODE_SINGLE_SHOT, handle_period_end);
-  // app_timer_create(&low_timer, APP_TIMER_MODE_SINGLE_SHOT, handle_drive_low);
 }
 
 uint32_t read_timer_3(void)
@@ -90,19 +86,63 @@ uint32_t read_timer_3(void)
   NRF_TIMER3->TASKS_CAPTURE[0];
   return NRF_TIMER3->CC[0];
 }
-
-void read_timer_4(void)
+uint32_t read_timer_4(void)
 {
   // return value of internal counter for TIMER4
   NRF_TIMER4->TASKS_CAPTURE[0];
   return NRF_TIMER4->CC[0];
 }
 
-/*
-to start timer, write to CC[1] with ticks at which to go off at
-*/
+void timer_3_start(uint32_t len)
+{
+  NRF_TIMER3->CC[1] = read_timer_3() + len;
+  NRF_TIMER3->TASKS_START = 1;
+}
+void timer_4_start(uint32_t len)
+{
+  NRF_TIMER4->CC[1] = read_timer_4() + len;
+  NRF_TIMER4->TASKS_START = 1;
+}
 
-void handle_period_end(void *_unused)
+void timer_3_stop(void)
+{
+  NRF_TIMER3->TASKS_STOP = 1;
+}
+void timer_4_stop(void)
+{
+  NRF_TIMER4->TASKS_STOP = 1;
+}
+
+// period timer
+void TIMER3_IRQHandler(void)
+{
+  // This should always be the first line of the interrupt handler!
+  // It clears the event so that it doesn't happen again
+  NRF_TIMER3->EVENTS_COMPARE[0] = 0;
+
+  handle_period_end();
+}
+
+// low timer
+void TIMER4_IRQHandler(void)
+{
+  // This should always be the first line of the interrupt handler!
+  // It clears the event so that it doesn't happen again
+  NRF_TIMER4->EVENTS_COMPARE[0] = 0;
+
+  handle_low_end();
+}
+
+void drive_high(void)
+{
+  nrf_gpio_pin_write(OUTPUT_PIN, 1);
+}
+void drive_low(void)
+{
+  nrf_gpio_pin_write(OUTPUT_PIN, 0);
+}
+
+void handle_period_end(void)
 {
   // set gpio pin high
   drive_high();
@@ -112,6 +152,20 @@ void handle_period_end(void *_unused)
   {
     // get next bit
     uint8_t next_bit = buffer[current_led] >> current_bit & 1;
+
+    // start low timer for next bit
+    if (next_bit)
+    {
+      timer_4_start(ONE_BIT_TICKS);
+    }
+    else
+    {
+      timer_4_start(ZERO_BIT_TICKS);
+    }
+
+    // start high timer for next bit
+    timer_3_start(PERIOD_TICKS);
+
     // update current bit and/or current led
     if (current_bit < BITS_PER_LED)
     {
@@ -122,52 +176,18 @@ void handle_period_end(void *_unused)
       current_bit = 0;
       current_led++;
     }
-    // start low timer for next bit
-    if (next_bit)
-    {
-      app_timer_start(low_timer, ONE_BIT_TICKS, NULL);
-    }
-    else
-    {
-      app_timer_start(low_timer, ZERO_BIT_TICKS, NULL);
-    }
-    // start high timer for next bit
-    app_timer_start(period_timer, PERIOD_TICKS, NULL);
   }
   else
   {
     // stop timer
-    app_timer_stop(period_timer);
+    timer_3_stop();
     drive_low();
   }
 }
 
-void handle_drive_low(void *_unused)
+void handle_low_end(void *_unused)
 {
   drive_low();
-}
-
-void drive_high(void)
-{
-  nrf_gpio_pin_write(OUTPUT_PIN, 1);
-}
-
-void drive_low(void)
-{
-  nrf_gpio_pin_write(OUTPUT_PIN, 0);
-}
-
-void write_bit(uint8_t bit)
-{
-  // write bit to gpio pin
-  if (bit)
-  {
-    app_timer_start(low_timer, ONE_BIT_TICKS, NULL);
-  }
-  else
-  {
-    app_timer_start(low_timer, ZERO_BIT_TICKS, NULL);
-  }
 }
 
 void display_buffer(uint32_t *buf)
@@ -179,5 +199,5 @@ void display_buffer(uint32_t *buf)
   current_bit = 0;
   current_led = 0;
   // start timer
-  app_timer_start(period_timer, PERIOD_TICKS, NULL);
+  timer_3_start(RESET_TICKS);
 }
