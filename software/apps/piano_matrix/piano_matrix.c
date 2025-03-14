@@ -3,10 +3,10 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "nrf.h"
 #include "nrf_gpio.h"
-// #include "app_timer.h"
 
 #include "piano_matrix.h"
 #include "microbit_v2.h"
@@ -20,17 +20,22 @@ uint32_t OUTPUT_PIN = 15;
  * timing constants
  */
 // these are in us
-float PERIOD_LEN = 1.25;
-float ONE_BIT_LEN = 0.8;
-float ZERO_BIT_LEN = 0.4;
-float RESET_LEN = 50;
+const float PERIOD_LEN = 1.25;
+const float ONE_BIT_LEN = 0.8;
+const float ZERO_BIT_LEN = 0.4;
+const float RESET_LEN = 50;
 
-float TICKS_PER_us = 16; // 16 ticks/us
+const float TICKS_PER_us = 16; // 16 ticks/us
 
-float PERIOD_TICKS = TICKS_PER_us * PERIOD_LEN;
-float ONE_BIT_TICKS = TICKS_PER_us * ONE_BIT_LEN;
-float ZERO_BIT_TICKS = TICKS_PER_us * ZERO_BIT_LEN;
-float RESET_TICKS = TICKS_PER_us * RESET_LEN;
+const float f_PERIOD_TICKS = TICKS_PER_us * PERIOD_LEN;
+const float f_ONE_BIT_TICKS = TICKS_PER_us * ONE_BIT_LEN;
+const float f_ZERO_BIT_TICKS = TICKS_PER_us * ZERO_BIT_LEN;
+const float f_RESET_TICKS = TICKS_PER_us * RESET_LEN;
+
+#define PERIOD_TICKS (uint32_t)round(f_PERIOD_TICKS)
+#define ONE_BIT_TICKS (uint32_t)round(f_ONE_BIT_TICKS)
+#define ZERO_BIT_TICKS (uint32_t)round(f_ZERO_BIT_TICKS)
+#define RESET_TICKS (uint32_t)round(f_RESET_TICKS)
 
 /**
  * led matrix constants
