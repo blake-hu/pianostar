@@ -32,6 +32,8 @@ int main(void)
   while (1)
   {
     printf("Looping\n");
+    printf("Timer 3: %d\n", read_timer_3());
+    printf("Timer 4: %d\n", read_timer_4());
     nrf_delay_ms(1000);
   }
 }

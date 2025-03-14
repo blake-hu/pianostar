@@ -108,10 +108,12 @@ void timer_4_start(uint32_t len)
 void timer_3_stop(void)
 {
   NRF_TIMER3->TASKS_STOP = 1;
+  NRF_TIMER3->TASKS_CLEAR = 1;
 }
 void timer_4_stop(void)
 {
   NRF_TIMER4->TASKS_STOP = 1;
+  NRF_TIMER4->TASKS_CLEAR = 1;
 }
 
 // period timer
@@ -119,7 +121,7 @@ void TIMER3_IRQHandler(void)
 {
   // This should always be the first line of the interrupt handler!
   // It clears the event so that it doesn't happen again
-  NRF_TIMER3->EVENTS_COMPARE[0] = 0;
+  NRF_TIMER3->EVENTS_COMPARE[1] = 0;
 
   printf("Period end\n");
 
@@ -131,7 +133,7 @@ void TIMER4_IRQHandler(void)
 {
   // This should always be the first line of the interrupt handler!
   // It clears the event so that it doesn't happen again
-  NRF_TIMER4->EVENTS_COMPARE[0] = 0;
+  NRF_TIMER4->EVENTS_COMPARE[1] = 0;
 
   printf("Low end\n");
 
