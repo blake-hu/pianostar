@@ -16,15 +16,15 @@ int main(void)
   printf("Board started!\n");
 
   // initialize LED matrix driver
-  led_matrix_init();
-
-  // turn everything on
   set_leds();
+  led_matrix_init();
   start_transfer();
 
   // loop forever
   while (1)
   {
+    // start_transfer();
+
     nrf_delay_ms(1000);
     printf("hi ");
   }

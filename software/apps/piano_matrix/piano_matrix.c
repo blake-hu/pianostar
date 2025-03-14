@@ -8,13 +8,14 @@
 #include "piano_matrix.h"
 #include "microbit_v2.h"
 
-#define NLEDS 256
+#define NLEDS 10
 #define RESET_BITS 6
 #define I2S_BUFFER_SIZE 3 * NLEDS + RESET_BITS
 
-#define MY_I2C_SDOUT_PIN 6
+#define MY_I2C_SDOUT_PIN 16
 
 static uint32_t m_buffer_tx[I2S_BUFFER_SIZE];
+static nrfx_i2s_buffers_t buffers = { NULL, m_buffer_tx };
 
 static void data_handler(nrfx_i2s_buffers_t const *p_released, uint32_t status)
 {
@@ -36,6 +37,7 @@ void led_matrix_init()
 
   nrfx_err_t err = nrfx_i2s_init(&config, data_handler);
   APP_ERROR_CHECK(err);
+  printf("initialized\n");
 }
 
 void set_leds()
@@ -46,7 +48,8 @@ void set_leds()
   // turn everything on
   for (int i = 0; i < NLEDS; i++)
   {
-    m_buffer_tx[i] = 0xeeeeeeee;
+    m_buffer_tx[i] = 0x88888888;
+    // m_buffer_tx[i] = 0xeeeeeeee;
   }
 
   // reset
@@ -54,15 +57,15 @@ void set_leds()
   {
     m_buffer_tx[i] = 0;
   }
+
+  printf("done setting leds\n");
 }
 
 void start_transfer()
 {
-  nrfx_i2s_buffers_t const initial_buffers = {
-      .p_tx_buffer = m_buffer_tx,
-      .p_rx_buffer = NULL};
-  nrfx_err_t err = nrfx_i2s_start(&initial_buffers, I2S_BUFFER_SIZE, 0);
+  nrfx_err_t err = nrfx_i2s_start(&buffers, I2S_BUFFER_SIZE, 0);
   APP_ERROR_CHECK(err);
+  printf("started transfer\n");
 }
 
 void stop_transfer()
