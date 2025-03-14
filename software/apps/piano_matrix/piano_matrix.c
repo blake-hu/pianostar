@@ -11,22 +11,28 @@
 #include "font.h"
 #include "microbit_v2.h"
 
+uint32_t OUTPUT_PIN = 15;
+
 uint32_t PERIOD_TICKS = 1000;
 
-void led_matrix_init(void) {
+void led_matrix_init(void)
+{
   // set gpio pin to output
-
+  nrf_gpio_pin_dir_set(OUTPUT_PIN, NRF_GPIO_PIN_DIR_OUTPUT);
 }
 
-void timer_init(void) {
+void timer_init(void)
+{
   // set up new timer to drive pin high every X ticks
 }
 
-void write_bit(uint8_t bit) {
+void write_bit(uint8_t bit)
+{
   // write bit to gpio pin
 }
 
-void write_24_bits(uint32_t bits) {
+void write_24_bits(uint32_t bits)
+{
   // 0000s at the top
   // write 24 bits to gpio pin
 }
