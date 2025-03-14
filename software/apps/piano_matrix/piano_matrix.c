@@ -4,20 +4,52 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "nrf.h"
 #include "nrf_gpio.h"
-#include "app_timer.h"
+// #include "app_timer.h"
 
-#include "led_matrix.h"
-#include "font.h"
+#include "piano_matrix.h"
 #include "microbit_v2.h"
 
 uint32_t OUTPUT_PIN = 15;
 
-APP_TIMER_DEF(timer1);
+APP_TIMER_DEF(period_timer);
+APP_TIMER_DEF(low_timer);
 
-uint32_t PERIOD_TICKS = 1000;
-uint32_t ONE_BIT_TICKS = 500;
-uint32_t ZERO_BIT_TICKS = 100;
+/*
+freq = ticks/second
+1 second = 1e6 us = 1,000,000 us
+
+convert from ticks/second to ticks/us
+ticks/us = ticks/second / 1,000,000
+ticks/us = freq / 1,000,000
+
+
+*/
+
+// period is 1.25 us
+// 1 bit is high for 0.8 us
+// 0 bit is high for 0.4 us
+
+// these are in us
+static float PERIOD_LEN = 1.25;
+static float ONE_BIT_LEN = 0.8;
+static float ZERO_BIT_LEN = 0.4;
+
+static uint32_t PERIOD_TICKS = 1000;
+static uint32_t ONE_BIT_TICKS = 500;
+static uint32_t ZERO_BIT_TICKS = 100;
+
+static uint32_t NUM_LEDS = 256;
+static uint32_t BITS_PER_LED = 24;
+static uint32_t *buffer;
+volatile uint32_t current_bit = 0;
+volatile uint32_t current_led = 0;
+
+void handle_period_end(void *_unused);
+void handle_drive_low(void *_unused);
+void drive_high(void);
+void drive_low(void);
 
 void led_matrix_init(void)
 {
@@ -26,27 +58,126 @@ void led_matrix_init(void)
   nrf_gpio_pin_clear(OUTPUT_PIN);
 }
 
-void drive_high(void)
+void timer_init(void)
+{
+  // clear timers
+  NRF_TIMER3->TASKS_CLEAR = 1;
+  NRF_TIMER4->TASKS_CLEAR = 1;
+
+  // prescaler to 0
+  NRF_TIMER3->PRESCALER = 0;
+  NRF_TIMER4->PRESCALER = 0;
+
+  // use big timers
+  NRF_TIMER3->BITMODE = 3;
+  NRF_TIMER4->BITMODE = 3;
+
+  // enable interrupts
+  NRF_TIMER3->INTENSET = 1 << 17; // COMPARE[1]
+  NRF_TIMER4->INTENSET = 1 << 17; // COMPARE[1]
+  NVIC_EnableIRQ(TIMER3_IRQn);
+  NVIC_EnableIRQ(TIMER4_IRQn);
+
+  // set up new timer to drive pin high every X ticks
+  // app_timer_init();
+  // app_timer_create(&period_timer, APP_TIMER_MODE_SINGLE_SHOT, handle_period_end);
+  // app_timer_create(&low_timer, APP_TIMER_MODE_SINGLE_SHOT, handle_drive_low);
+}
+
+uint32_t read_timer_3(void)
+{
+  // return value of internal counter for TIMER4
+  NRF_TIMER3->TASKS_CAPTURE[0];
+  return NRF_TIMER3->CC[0];
+}
+
+void read_timer_4(void)
+{
+  // return value of internal counter for TIMER4
+  NRF_TIMER4->TASKS_CAPTURE[0];
+  return NRF_TIMER4->CC[0];
+}
+
+/*
+to start timer, write to CC[1] with ticks at which to go off at
+*/
+
+void handle_period_end(void *_unused)
 {
   // set gpio pin high
+  drive_high();
+
+  // set timers for next bit
+  if (current_bit < BITS_PER_LED || current_led < NUM_LEDS)
+  {
+    // get next bit
+    uint8_t next_bit = buffer[current_led] >> current_bit & 1;
+    // update current bit and/or current led
+    if (current_bit < BITS_PER_LED)
+    {
+      current_bit++;
+    }
+    else
+    {
+      current_bit = 0;
+      current_led++;
+    }
+    // start low timer for next bit
+    if (next_bit)
+    {
+      app_timer_start(low_timer, ONE_BIT_TICKS, NULL);
+    }
+    else
+    {
+      app_timer_start(low_timer, ZERO_BIT_TICKS, NULL);
+    }
+    // start high timer for next bit
+    app_timer_start(period_timer, PERIOD_TICKS, NULL);
+  }
+  else
+  {
+    // stop timer
+    app_timer_stop(period_timer);
+    drive_low();
+  }
+}
+
+void handle_drive_low(void *_unused)
+{
+  drive_low();
+}
+
+void drive_high(void)
+{
   nrf_gpio_pin_write(OUTPUT_PIN, 1);
 }
 
-void timer_init(void)
+void drive_low(void)
 {
-  // set up new timer to drive pin high every X ticks
-  app_timer_init();
-  app_timer_create(&timer1, APP_TIMER_MODE_REPEATED, drive_high);
-  app_timer_start(timer1, PERIOD_TICKS, NULL);
+  nrf_gpio_pin_write(OUTPUT_PIN, 0);
 }
 
 void write_bit(uint8_t bit)
 {
   // write bit to gpio pin
+  if (bit)
+  {
+    app_timer_start(low_timer, ONE_BIT_TICKS, NULL);
+  }
+  else
+  {
+    app_timer_start(low_timer, ZERO_BIT_TICKS, NULL);
+  }
 }
 
-void write_24_bits(uint32_t bits)
+void display_buffer(uint32_t *buf)
 {
-  // 0000s at the top
-  // write 24 bits to gpio pin
+  drive_low();
+  // set buffer
+  buffer = buf;
+  // reset everything
+  current_bit = 0;
+  current_led = 0;
+  // start timer
+  app_timer_start(period_timer, PERIOD_TICKS, NULL);
 }

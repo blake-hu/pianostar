@@ -8,21 +8,29 @@
 
 #include "nrf_delay.h"
 
-#include "led_matrix.h"
+#include "piano_matrix.h"
 #include "microbit_v2.h"
 
-int main(void) {
-  printf("Board started!\n");
-  
-  // initialize LED matrix driver
-  led_matrix_init();
+static uint32_t buffer[256];
 
-  // call other functions here
+int main(void)
+{
+  printf("Board started!\n");
+
+  // init
+  led_matrix_init();
+  timer_init();
+
+  // turn everything on
+  for (int i = 0; i < 256; i++)
+  {
+    buffer[i] = 0xFFFFFF;
+  }
+  display_buffer(buffer);
 
   // loop forever
-  while (1) {
+  while (1)
+  {
     nrf_delay_ms(1000);
   }
 }
-
-
