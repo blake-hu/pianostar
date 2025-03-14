@@ -93,13 +93,16 @@ uint32_t read_timer_4(void)
 
 void timer_3_start(uint32_t len)
 {
+  printf("len: %d\n", len);
   NRF_TIMER3->CC[1] = read_timer_3() + len;
   NRF_TIMER3->TASKS_START = 1;
+  printf("Timer 3 started\n");
 }
 void timer_4_start(uint32_t len)
 {
   NRF_TIMER4->CC[1] = read_timer_4() + len;
   NRF_TIMER4->TASKS_START = 1;
+  printf("Timer 4 started\n");
 }
 
 void timer_3_stop(void)
@@ -118,6 +121,8 @@ void TIMER3_IRQHandler(void)
   // It clears the event so that it doesn't happen again
   NRF_TIMER3->EVENTS_COMPARE[0] = 0;
 
+  printf("Period end\n");
+
   handle_period_end();
 }
 
@@ -127,6 +132,8 @@ void TIMER4_IRQHandler(void)
   // This should always be the first line of the interrupt handler!
   // It clears the event so that it doesn't happen again
   NRF_TIMER4->EVENTS_COMPARE[0] = 0;
+
+  printf("Low end\n");
 
   handle_low_end();
 }
@@ -187,9 +194,10 @@ void handle_period_end(void)
   }
   else
   {
-    // stop timer
-    timer_3_stop();
     drive_low();
+    // stop timers
+    timer_3_stop();
+    timer_4_stop();
   }
 }
 
@@ -203,6 +211,11 @@ void display_buffer(uint32_t *buf)
   drive_low();
   // set buffer
   buffer = buf;
+  // print first 5 items in buffer
+  for (int i = 0; i < 5; i++)
+  {
+    printf("Buffer[%d]: %x\n", i, buffer[i]);
+  }
   // reset everything
   current_bit = 0;
   current_led = 0;

@@ -31,6 +31,7 @@ int main(void)
   // loop forever
   while (1)
   {
+    printf("Looping\n");
     nrf_delay_ms(1000);
   }
 }
