@@ -4,9 +4,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "nrf.h"
 #include "nrf_gpio.h"
+#include "nrf_delay.h"
 
 #include "piano_matrix.h"
 #include "microbit_v2.h"
@@ -29,6 +31,7 @@ const float ZERO_BIT_LEN = 0.4;
 const float RESET_LEN = 50;
 
 const float TICKS_PER_us = 16; // 16 ticks/us
+// const float TICKS_PER_us = 16000; // 16 ticks/us // TODO
 
 const float f_PERIOD_TICKS = TICKS_PER_us * PERIOD_LEN;
 const float f_ONE_BIT_TICKS = TICKS_PER_us * ONE_BIT_LEN;
@@ -43,11 +46,12 @@ const float f_RESET_TICKS = TICKS_PER_us * RESET_LEN;
 /**
  * led matrix constants
  */
-uint32_t NUM_LEDS = 256;
-uint32_t BITS_PER_LED = 24;
+uint32_t NUM_LEDS = 10;     // TODO
+uint32_t BITS_PER_LED = 24; // TODO
 uint32_t *buffer;
 volatile uint32_t current_bit = 0;
 volatile uint32_t current_led = 0;
+volatile bool writing = false;
 
 /**
  * forward declarations
@@ -84,7 +88,7 @@ void timer_init(void)
   NRF_TIMER3->TASKS_CLEAR = 1;
   NRF_TIMER4->TASKS_CLEAR = 1;
 
-  printf("Timers initialized\n");
+  // printf("Timers initialized\n");
 }
 
 uint32_t read_timer_3(void)
@@ -102,16 +106,16 @@ uint32_t read_timer_4(void)
 
 void timer_3_start(uint32_t len)
 {
-  printf("len: %ld\n", len);
+  // printf("len: %ld\n", len);
   NRF_TIMER3->CC[WRITE_CHANNEL] = read_timer_3() + len;
   NRF_TIMER3->TASKS_START = 1;
-  printf("Timer 3 started\n");
+  // printf("Timer 3 started\n");
 }
 void timer_4_start(uint32_t len)
 {
   NRF_TIMER4->CC[WRITE_CHANNEL] = read_timer_4() + len;
   NRF_TIMER4->TASKS_START = 1;
-  printf("Timer 4 started\n");
+  // printf("Timer 4 started\n");
 }
 
 void timer_3_stop(void)
@@ -132,7 +136,7 @@ void TIMER3_IRQHandler(void)
   // It clears the event so that it doesn't happen again
   NRF_TIMER3->EVENTS_COMPARE[WRITE_CHANNEL] = 0;
 
-  printf("Period end\n");
+  printf("PERIOD FIRED\n");
 
   handle_period_end();
 }
@@ -144,7 +148,7 @@ void TIMER4_IRQHandler(void)
   // It clears the event so that it doesn't happen again
   NRF_TIMER4->EVENTS_COMPARE[WRITE_CHANNEL] = 0;
 
-  printf("Low end\n");
+  printf("LOW FIRED\n");
 
   handle_low_end();
 }
@@ -209,6 +213,7 @@ void handle_period_end(void)
     // stop timers
     timer_3_stop();
     timer_4_stop();
+    writing = false;
   }
 }
 
@@ -219,17 +224,23 @@ void handle_low_end(void)
 
 void display_buffer(uint32_t *buf)
 {
+  writing = true;
   drive_low();
   // set buffer
   buffer = buf;
   // print first 5 items in buffer
-  for (int i = 0; i < 5; i++)
-  {
-    printf("Buffer[%d]: %lx\n", i, buffer[i]);
-  }
+  // for (int i = 0; i < 5; i++)
+  // {
+  //   printf("Buffer[%d]: %lx\n", i, buffer[i]);
+  // }
   // reset everything
   current_bit = 0;
   current_led = 0;
   // start timer
   timer_3_start(RESET_TICKS);
+  // wait until done writing
+  while (writing)
+  {
+    nrf_delay_ms(1);
+  }
 }
