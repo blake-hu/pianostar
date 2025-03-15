@@ -12,9 +12,12 @@
 #include "microbit_v2.h"
 
 /**
- * output pin
+ * pin/register config
  */
-uint32_t OUTPUT_PIN = 15;
+static uint32_t OUTPUT_PIN = 15;
+
+static uint32_t READ_CHANNEL = 0;
+static uint32_t WRITE_CHANNEL = 1;
 
 /**
  * timing constants
@@ -71,6 +74,10 @@ void timer_init(void)
   NRF_TIMER3->BITMODE = 3;
   NRF_TIMER4->BITMODE = 3;
 
+  // timer mode
+  NRF_TIMER3->MODE = 0;
+  NRF_TIMER4->MODE = 0;
+
   // enable interrupts
   NRF_TIMER3->INTENSET = 1 << 17; // COMPARE[1]
   NRF_TIMER4->INTENSET = 1 << 17; // COMPARE[1]
@@ -81,26 +88,26 @@ void timer_init(void)
 uint32_t read_timer_3(void)
 {
   // return value of internal counter for TIMER4
-  NRF_TIMER3->TASKS_CAPTURE[0];
-  return NRF_TIMER3->CC[0];
+  NRF_TIMER3->TASKS_CAPTURE[READ_CHANNEL];
+  return NRF_TIMER3->CC[READ_CHANNEL];
 }
 uint32_t read_timer_4(void)
 {
   // return value of internal counter for TIMER4
-  NRF_TIMER4->TASKS_CAPTURE[0];
-  return NRF_TIMER4->CC[0];
+  NRF_TIMER4->TASKS_CAPTURE[READ_CHANNEL];
+  return NRF_TIMER4->CC[READ_CHANNEL];
 }
 
 void timer_3_start(uint32_t len)
 {
   printf("len: %d\n", len);
-  NRF_TIMER3->CC[1] = read_timer_3() + len;
+  NRF_TIMER3->CC[WRITE_CHANNEL] = read_timer_3() + len;
   NRF_TIMER3->TASKS_START = 1;
   printf("Timer 3 started\n");
 }
 void timer_4_start(uint32_t len)
 {
-  NRF_TIMER4->CC[1] = read_timer_4() + len;
+  NRF_TIMER4->CC[WRITE_CHANNEL] = read_timer_4() + len;
   NRF_TIMER4->TASKS_START = 1;
   printf("Timer 4 started\n");
 }
@@ -121,7 +128,7 @@ void TIMER3_IRQHandler(void)
 {
   // This should always be the first line of the interrupt handler!
   // It clears the event so that it doesn't happen again
-  NRF_TIMER3->EVENTS_COMPARE[1] = 0;
+  NRF_TIMER3->EVENTS_COMPARE[WRITE_CHANNEL] = 0;
 
   printf("Period end\n");
 
@@ -133,7 +140,7 @@ void TIMER4_IRQHandler(void)
 {
   // This should always be the first line of the interrupt handler!
   // It clears the event so that it doesn't happen again
-  NRF_TIMER4->EVENTS_COMPARE[1] = 0;
+  NRF_TIMER4->EVENTS_COMPARE[WRITE_CHANNEL] = 0;
 
   printf("Low end\n");
 
@@ -161,12 +168,12 @@ void drive_low(void)
 
 void handle_period_end(void)
 {
-  // set gpio pin high
-  drive_high();
-
-  // set timers for next bit
+  // there is another bit left to send
   if (current_bit < BITS_PER_LED || current_led < NUM_LEDS)
   {
+    // set gpio pin high
+    drive_high();
+
     // get next bit
     uint8_t next_bit = buffer[current_led] >> current_bit & 1;
 
