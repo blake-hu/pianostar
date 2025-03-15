@@ -87,8 +87,6 @@ void timer_init(void)
   // clear timers
   NRF_TIMER3->TASKS_CLEAR = 1;
   NRF_TIMER4->TASKS_CLEAR = 1;
-
-  // printf("Timers initialized\n");
 }
 
 uint32_t read_timer_3(void)
@@ -106,16 +104,13 @@ uint32_t read_timer_4(void)
 
 void timer_3_start(uint32_t len)
 {
-  // printf("len: %ld\n", len);
   NRF_TIMER3->CC[WRITE_CHANNEL] = read_timer_3() + len;
   NRF_TIMER3->TASKS_START = 1;
-  // printf("Timer 3 started\n");
 }
 void timer_4_start(uint32_t len)
 {
   NRF_TIMER4->CC[WRITE_CHANNEL] = read_timer_4() + len;
   NRF_TIMER4->TASKS_START = 1;
-  // printf("Timer 4 started\n");
 }
 
 void timer_3_stop(void)
@@ -228,11 +223,6 @@ void display_buffer(uint32_t *buf)
   drive_low();
   // set buffer
   buffer = buf;
-  // print first 5 items in buffer
-  // for (int i = 0; i < 5; i++)
-  // {
-  //   printf("Buffer[%d]: %lx\n", i, buffer[i]);
-  // }
   // reset everything
   current_bit = 0;
   current_led = 0;
