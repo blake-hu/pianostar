@@ -30,8 +30,9 @@ const float ONE_BIT_LEN = 0.8;
 const float ZERO_BIT_LEN = 0.4;
 const float RESET_LEN = 50;
 
-const float TICKS_PER_us = 16; // 16 ticks/us
-// const float TICKS_PER_us = 16000; // 16 ticks/us // TODO
+// const float TICKS_PER_us = 16; // ticks/us
+// const float TICKS_PER_us = 16000; // ticks/ms
+const float TICKS_PER_us = 16000000; // 16 ticks/s
 
 const float f_PERIOD_TICKS = TICKS_PER_us * PERIOD_LEN;
 const float f_ONE_BIT_TICKS = TICKS_PER_us * ONE_BIT_LEN;
@@ -131,7 +132,7 @@ void TIMER3_IRQHandler(void)
   // It clears the event so that it doesn't happen again
   NRF_TIMER3->EVENTS_COMPARE[WRITE_CHANNEL] = 0;
 
-  printf("PERIOD FIRED\n");
+  // printf("PERIOD FIRED\n");
 
   handle_period_end();
 }
@@ -143,7 +144,7 @@ void TIMER4_IRQHandler(void)
   // It clears the event so that it doesn't happen again
   NRF_TIMER4->EVENTS_COMPARE[WRITE_CHANNEL] = 0;
 
-  printf("LOW FIRED\n");
+  // printf("LOW FIRED\n");
 
   handle_low_end();
 }

@@ -1,6 +1,10 @@
 {
     "files.associations": {
+        "*.sqlbook": "sql",
+        "*.ndjson": "jsonl",
+        "*.dbclient-js": "javascript",
         "pwm_speaker.h": "c",
-        "istream": "c"
+        "istream": "c",
+        "virtual_timer.h": "c"
     }
 }

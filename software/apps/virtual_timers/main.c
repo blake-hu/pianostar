@@ -21,19 +21,23 @@
 #include "microbit_v2.h"
 #include "virtual_timer.h"
 
-void led1_toggle() {
-    nrf_gpio_pin_toggle(LED_ROW1);
+void led1_toggle()
+{
+  nrf_gpio_pin_toggle(LED_ROW1);
 }
 
-void led2_toggle() {
-    nrf_gpio_pin_toggle(LED_ROW2);
+void led2_toggle()
+{
+  nrf_gpio_pin_toggle(LED_ROW2);
 }
 
-void led3_toggle() {
-    nrf_gpio_pin_toggle(LED_ROW3);
+void led3_toggle()
+{
+  nrf_gpio_pin_toggle(LED_ROW3);
 }
 
-int main(void) {
+int main(void)
+{
   printf("Board initialized!\n");
 
   // Configure Microbit pins
@@ -51,12 +55,12 @@ int main(void) {
   nrf_delay_ms(3000);
 
   // Set up some timers and see what happens
-  //virtual_timer_start_repeated(1000000, led1_toggle);
-  //virtual_timer_start_repeated(2000000, led2_toggle);
+  // virtual_timer_start_repeated(1000000, led1_toggle);
+  // virtual_timer_start_repeated(2000000, led2_toggle);
 
   // loop forever
-  while (1) {
+  while (1)
+  {
     nrf_delay_ms(1000);
   }
 }
-
