@@ -10,6 +10,7 @@ void led_matrix_init(void);
 // init timers
 void timer_init(void);
 
+// for debugging
 uint32_t read_timer_3(void);
 uint32_t read_timer_4(void);
 
