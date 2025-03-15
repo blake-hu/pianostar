@@ -1,5 +1,5 @@
 PianoStar LED matrix
 ==============
 
-pls work
-
+TODO: when i increase the amt of ticks, it seems to go faster?? 
+that doesnt make any sense.
