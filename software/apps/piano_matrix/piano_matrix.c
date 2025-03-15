@@ -28,11 +28,11 @@ static uint32_t WRITE_CHANNEL = 1;
 const float PERIOD_LEN = 1.25;
 const float ONE_BIT_LEN = 0.8;
 const float ZERO_BIT_LEN = 0.4;
-const float RESET_LEN = 50;
+const float RESET_LEN = 55;
 
-// const float TICKS_PER_us = 16; // ticks/us
+const float TICKS_PER_us = 16; // ticks/us
 // const float TICKS_PER_us = 16000; // ticks/ms
-const float TICKS_PER_us = 16000000; // 16 ticks/s
+// const float TICKS_PER_us = 16000000; // 16 ticks/s
 
 const float f_PERIOD_TICKS = TICKS_PER_us * PERIOD_LEN;
 const float f_ONE_BIT_TICKS = TICKS_PER_us * ONE_BIT_LEN;
@@ -47,7 +47,7 @@ const float f_RESET_TICKS = TICKS_PER_us * RESET_LEN;
 /**
  * led matrix constants
  */
-uint32_t NUM_LEDS = 10;     // TODO
+uint32_t NUM_LEDS = 256;    // TODO
 uint32_t BITS_PER_LED = 24; // TODO
 uint32_t *buffer;
 volatile uint32_t current_bit = 0;
@@ -221,6 +221,10 @@ void handle_low_end(void)
 void display_buffer(uint32_t *buf)
 {
   writing = true;
+  printf("Period ticks: %ld\n", PERIOD_TICKS);
+  printf("One bit ticks: %ld\n", ONE_BIT_TICKS);
+  printf("Zero bit ticks: %ld\n", ZERO_BIT_TICKS);
+  printf("Reset ticks: %ld\n", RESET_TICKS);
   drive_low();
   // set buffer
   buffer = buf;
