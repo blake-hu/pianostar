@@ -62,10 +62,6 @@ void drive_low(void);
  */
 void timer_init(void)
 {
-  // clear timers
-  NRF_TIMER3->TASKS_CLEAR = 1;
-  NRF_TIMER4->TASKS_CLEAR = 1;
-
   // prescaler to 0
   NRF_TIMER3->PRESCALER = 0;
   NRF_TIMER4->PRESCALER = 0;
@@ -83,24 +79,30 @@ void timer_init(void)
   NRF_TIMER4->INTENSET = 1 << 17; // COMPARE[1]
   NVIC_EnableIRQ(TIMER3_IRQn);
   NVIC_EnableIRQ(TIMER4_IRQn);
+
+  // clear timers
+  NRF_TIMER3->TASKS_CLEAR = 1;
+  NRF_TIMER4->TASKS_CLEAR = 1;
+
+  printf("Timers initialized\n");
 }
 
 uint32_t read_timer_3(void)
 {
   // return value of internal counter for TIMER4
-  NRF_TIMER3->TASKS_CAPTURE[READ_CHANNEL];
+  NRF_TIMER3->TASKS_CAPTURE[READ_CHANNEL] = 1;
   return NRF_TIMER3->CC[READ_CHANNEL];
 }
 uint32_t read_timer_4(void)
 {
   // return value of internal counter for TIMER4
-  NRF_TIMER4->TASKS_CAPTURE[READ_CHANNEL];
+  NRF_TIMER4->TASKS_CAPTURE[READ_CHANNEL] = 1;
   return NRF_TIMER4->CC[READ_CHANNEL];
 }
 
 void timer_3_start(uint32_t len)
 {
-  printf("len: %d\n", len);
+  printf("len: %ld\n", len);
   NRF_TIMER3->CC[WRITE_CHANNEL] = read_timer_3() + len;
   NRF_TIMER3->TASKS_START = 1;
   printf("Timer 3 started\n");
@@ -223,7 +225,7 @@ void display_buffer(uint32_t *buf)
   // print first 5 items in buffer
   for (int i = 0; i < 5; i++)
   {
-    printf("Buffer[%d]: %x\n", i, buffer[i]);
+    printf("Buffer[%d]: %lx\n", i, buffer[i]);
   }
   // reset everything
   current_bit = 0;
