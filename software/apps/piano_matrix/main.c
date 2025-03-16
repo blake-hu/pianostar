@@ -12,23 +12,25 @@
 #include "piano_matrix.h"
 #include "microbit_v2.h"
 
-static uint32_t buffer[256];
+// static uint32_t buffer[256];
 
 int main(void)
 {
-  printf("\n");
-  printf("Board started!\n");
+  printf("\nBoard started!\n");
 
   // init
   led_matrix_init();
   timer_init();
 
+  // display one led
+  display_buffer();
+
   // turn everything on
-  for (int i = 0; i < 256; i++)
-  {
-    buffer[i] = 0x0000FF;
-  }
-  display_buffer(buffer);
+  // for (int i = 0; i < 256; i++)
+  // {
+  //   buffer[i] = 0x0000FF;
+  // }
+  // display_buffer(buffer);
 
   // loop forever
   while (1)
