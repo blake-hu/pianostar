@@ -26,7 +26,7 @@ int main(void)
   // turn everything on
   for (int i = 0; i < 256; i++)
   {
-    buffer[i] = 0xFFFFFF;
+    buffer[i] = 0x0000FF;
   }
   display_buffer(buffer);
 

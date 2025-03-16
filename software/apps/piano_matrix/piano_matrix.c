@@ -47,12 +47,20 @@ const float f_RESET_TICKS = TICKS_PER_us * RESET_LEN;
 /**
  * led matrix constants
  */
-uint32_t NUM_LEDS = 256;    // TODO
-uint32_t BITS_PER_LED = 24; // TODO
+#define NUM_LEDS 1      // TODO
+#define BITS_PER_LED 24 // TODO
 uint32_t *buffer;
-volatile uint32_t current_bit = 0;
-volatile uint32_t current_led = 0;
-volatile bool writing = false;
+static uint32_t current_bit = 0;
+static uint32_t current_led = 0;
+static bool writing = false;
+
+/**
+ * debugging
+ */
+#define DEBUG_BUF_SIZE NUM_LEDS *BITS_PER_LED
+uint32_t period_buf[DEBUG_BUF_SIZE];
+uint32_t low_buf[DEBUG_BUF_SIZE];
+uint32_t debug_buf[DEBUG_BUF_SIZE];
 
 /**
  * forward declarations
@@ -105,12 +113,20 @@ uint32_t read_timer_4(void)
 
 void timer_3_start(uint32_t len)
 {
-  NRF_TIMER3->CC[WRITE_CHANNEL] = read_timer_3() + len;
+  debug_buf[current_bit] = current_bit;
+  uint32_t amt = read_timer_3() + len;
+  period_buf[current_bit] = amt;
+  NRF_TIMER3->CC[WRITE_CHANNEL] = amt;
+  // printf("timer 3 fire at %ld\n", amt);
   NRF_TIMER3->TASKS_START = 1;
 }
 void timer_4_start(uint32_t len)
 {
-  NRF_TIMER4->CC[WRITE_CHANNEL] = read_timer_4() + len;
+  debug_buf[current_bit] = current_bit;
+  uint32_t amt = read_timer_4() + len;
+  low_buf[current_bit] = amt;
+  NRF_TIMER4->CC[WRITE_CHANNEL] = amt;
+  // printf("timer 4 fire at %ld\n", amt);
   NRF_TIMER4->TASKS_START = 1;
 }
 
@@ -173,14 +189,16 @@ void handle_period_end(void)
   // there is another bit left to send
   if (current_bit < BITS_PER_LED || current_led < NUM_LEDS)
   {
+    // printf("current bit: %ld, current led: %ld\n", current_bit, current_led);
+
     // set gpio pin high
     drive_high();
 
-    // get next bit
-    uint8_t next_bit = buffer[current_led] >> current_bit & 1;
+    // get current bit
+    uint8_t cb = buffer[current_led] >> current_bit & 1;
 
-    // start low timer for next bit
-    if (next_bit)
+    // start low timer for current bit
+    if (cb)
     {
       timer_4_start(ONE_BIT_TICKS);
     }
@@ -189,10 +207,7 @@ void handle_period_end(void)
       timer_4_start(ZERO_BIT_TICKS);
     }
 
-    // start high timer for next bit
-    timer_3_start(PERIOD_TICKS);
-
-    // update current bit and/or current led
+    // move to next bit
     if (current_bit < BITS_PER_LED)
     {
       current_bit++;
@@ -202,6 +217,9 @@ void handle_period_end(void)
       current_bit = 0;
       current_led++;
     }
+
+    // start high timer for next bit
+    timer_3_start(PERIOD_TICKS);
   }
   else
   {
@@ -237,5 +255,10 @@ void display_buffer(uint32_t *buf)
   while (writing)
   {
     nrf_delay_ms(1);
+  }
+  // print contents of debug_buf, period_buf and low_buf
+  for (uint32_t i = 0; i < DEBUG_BUF_SIZE; i++)
+  {
+    printf("%ld: high at %ld, low at %ld\n", debug_buf[i], period_buf[i], low_buf[i]);
   }
 }
