@@ -72,12 +72,16 @@ nrf_pwm_values_common_t seq_one_blue[24] = {
   ONE_BIT_TICKS, ONE_BIT_TICKS, ONE_BIT_TICKS, ONE_BIT_TICKS,
 };
 
+static void gpio_init(void)
+{
+  // Initialize the GPIO
+  nrf_gpio_cfg_output(OUTPUT_PIN);
+  nrf_gpio_pin_clear(OUTPUT_PIN);
+}
+
 static void pwm_init(void)
 {
   // Initialize the PWM
-  // SPEAKER_OUT is the output pin, mark the others as NRFX_PWM_PIN_NOT_USED
-  // Set the clock to 500 kHz, count mode to Up, and load mode to Common
-  // The Countertop value doesn't matter for now. We'll set it in play_tone()
   nrfx_pwm_config_t pwm_config = {
       .output_pins = {OUTPUT_PIN, 
                       NRFX_PWM_PIN_NOT_USED, 
@@ -132,7 +136,8 @@ int main(void)
 {
   printf("Board started!\n");
 
-  // initialize PWM
+  // init
+  gpio_init();
   pwm_init();
 
   // reset
@@ -150,7 +155,10 @@ int main(void)
   
   // display
   send_led_sequence(seq_one_red, 24, 20);
-  nrf_delay_ms(1000);
+  while (!nrfx_pwm_is_stopped(&PWM_INST))
+  {
+    nrf_delay_us(10);
+  }
   printf("LED flushed\n");
 
   // Stop
