@@ -1,6 +1,5 @@
-// PWM Square wave tone app
+// PWM to control the external led matrix
 //
-// Use PWM to play a tone over the speaker using a square wave
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -16,37 +15,67 @@
 /**
  * output pin
  */
-#define OUTPUT_PIN 15
+#define OUTPUT_PIN EDGE_P15
 
 /**
  * timing constants
  */
 // these are in us
-const float PERIOD_LEN = 1.25;
-const float ONE_BIT_LEN = 0.8;
-const float ZERO_BIT_LEN = 0.4;
-const float RESET_LEN = 55;
+#define PERIOD_LEN 1.25
+#define ONE_BIT_LEN 0.8
+#define ZERO_BIT_LEN 0.4
+#define RESET_LEN 55
 
-const float TICKS_PER_us = 16; // ticks/us
+#define TICKS_PER_us 16 // ticks/us
 
-#define PERIOD_TICKS (uint32_t)round(TICKS_PER_us * PERIOD_LEN)
-#define ONE_BIT_TICKS (uint32_t)round(TICKS_PER_us * ONE_BIT_LEN)
-#define ZERO_BIT_TICKS (uint32_t)round(TICKS_PER_us * ZERO_BIT_LEN)
-#define RESET_TICKS (uint32_t)round(TICKS_PER_us * RESET_LEN)
+#define PERIOD_TICKS 20 // 1.25 * 16
+#define ONE_BIT_TICKS 13 // 0.8 * 16
+#define ZERO_BIT_TICKS 6 // 0.4 * 16
+#define RESET_TICKS 880 // 55 * 16
 
+// #define PERIOD_TICKS (uint32_t)round(TICKS_PER_us * PERIOD_LEN)
+// #define ONE_BIT_TICKS (uint32_t)round(TICKS_PER_us * ONE_BIT_LEN)
+// #define ZERO_BIT_TICKS (uint32_t)round(TICKS_PER_us * ZERO_BIT_LEN)
+// #define RESET_TICKS (uint32_t)round(TICKS_PER_us * RESET_LEN)
 
-// PWM configuration
+/**
+ * PWM stuff
+ */
+// PWM instance
 static const nrfx_pwm_t PWM_INST = NRFX_PWM_INSTANCE(0);
 
-// Holds duty cycle values to trigger PWM toggle
-nrf_pwm_values_common_t sequence_data[1] = {0};
+// sequence: 44 0s (reset sequence)
+// requires countertop of RESET_TICKS
+nrf_pwm_values_common_t seq_reset[1] = {0};
 
-// Sequence structure for configuring DMA
-nrf_pwm_sequence_t pwm_sequence = {
-    .values.p_common = sequence_data,
-    .length = 1,
-    .repeats = 0,
-    .end_delay = 0,
+// sequence: FF0000 = green
+nrf_pwm_values_common_t seq_one_green[24] = {
+  ONE_BIT_TICKS, ONE_BIT_TICKS, ONE_BIT_TICKS, ONE_BIT_TICKS,
+  ONE_BIT_TICKS, ONE_BIT_TICKS, ONE_BIT_TICKS, ONE_BIT_TICKS,
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+};
+
+// sequence: 00FF00 = red
+nrf_pwm_values_common_t seq_one_red[24] = {
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+  ONE_BIT_TICKS, ONE_BIT_TICKS, ONE_BIT_TICKS, ONE_BIT_TICKS,
+  ONE_BIT_TICKS, ONE_BIT_TICKS, ONE_BIT_TICKS, ONE_BIT_TICKS,
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+};
+
+// sequence: 0000FF = blue
+nrf_pwm_values_common_t seq_one_blue[24] = {
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+  ONE_BIT_TICKS, ONE_BIT_TICKS, ONE_BIT_TICKS, ONE_BIT_TICKS,
+  ONE_BIT_TICKS, ONE_BIT_TICKS, ONE_BIT_TICKS, ONE_BIT_TICKS,
 };
 
 static void pwm_init(void)
@@ -59,27 +88,47 @@ static void pwm_init(void)
       .output_pins = {OUTPUT_PIN, NRFX_PWM_PIN_NOT_USED, NRFX_PWM_PIN_NOT_USED, NRFX_PWM_PIN_NOT_USED},
       .base_clock = NRF_PWM_CLK_16MHz,
       .count_mode = NRF_PWM_MODE_UP,
-      .top_value = 100, // anything for now
+      .top_value = PERIOD_TICKS,
       .load_mode = NRF_PWM_LOAD_COMMON,
       .step_mode = NRF_PWM_STEP_AUTO};
 
   nrfx_pwm_init(&PWM_INST, &pwm_config, NULL);
 }
 
-static void play_tone(uint16_t frequency)
+static void send_reset_sequence()
 {
-  // Stop the PWM (and wait until its finished)
+  // Stop the PWM (and wait until current playback is finished)
   nrfx_pwm_stop(&PWM_INST, true);
 
-  // Set a countertop value based on desired tone frequency
-  // You can access it as NRF_PWM0->COUNTERTOP
-  NRF_PWM0->COUNTERTOP = 500000 / frequency;
+  // adjust countertop
+  NRF_PWM0->COUNTERTOP = RESET_TICKS;
 
-  // Modify the sequence data to be a 25% duty cycle
-  sequence_data[0] = 0.5 * 500000 / frequency;
+  // keep it low for 55us
+  nrf_pwm_sequence_t reset = {
+      .values.p_common = seq_reset,
+      .length = 1,
+      .repeats = 0,
+      .end_delay = 0,
+  };
+  nrfx_pwm_simple_playback(&PWM_INST, &reset, 1, NRFX_PWM_FLAG_STOP);
+}
 
-  // Start playback of the samples and loop indefinitely
-  nrfx_pwm_simple_playback(&PWM_INST, &pwm_sequence, frequency, NRFX_PWM_FLAG_STOP);
+static void send_led_sequence(nrf_pwm_values_common_t* seq_led, uint16_t len)
+{
+  // Stop the PWM (and wait until current playback is finished)
+  nrfx_pwm_stop(&PWM_INST, true);
+  
+  // set countertop to one peroid
+  NRF_PWM0->COUNTERTOP = PERIOD_TICKS;
+
+  // light one led
+  nrf_pwm_sequence_t one_led = {
+      .values.p_common = seq_led,
+      .length = len,
+      .repeats = 0,
+      .end_delay = 0,
+  };
+  nrfx_pwm_simple_playback(&PWM_INST, &one_led, 1, NRFX_PWM_FLAG_STOP);
 }
 
 int main(void)
@@ -89,22 +138,18 @@ int main(void)
   // initialize PWM
   pwm_init();
 
-  // Play the A4 tone for one second
-  play_tone(440);
+  // write to led matrix
+  send_reset_sequence();
+  while (!nrfx_pwm_is_stopped(&PWM_INST))
+  {
+    nrf_delay_us(10);
+  }
+  send_led_sequence(seq_one_red, 24);
   nrf_delay_ms(1000);
+  printf("LED flushed\n");
 
-  // Play the C#5 tone for one second
-  play_tone(554);
-  nrf_delay_ms(1000);
-
-  // Play the E5 tone for one second
-  play_tone(659);
-  nrf_delay_ms(1000);
-
-  // Play the A5 tone for one second
-  play_tone(880);
-  nrf_delay_ms(1000);
-
-  // Stop all noises
+  // Stop
   nrfx_pwm_stop(&PWM_INST, true);
 }
+
+// TODO: event handler
