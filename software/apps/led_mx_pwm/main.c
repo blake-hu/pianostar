@@ -33,6 +33,8 @@
 #define ZERO_BIT_TICKS 6 | 0x8000 // 0.4 * 16
 #define RESET_TICKS 880 // 55 * 16
 
+#define RESET_VALUE 0 | 0x8000
+
 /**
  * PWM stuff
  */
@@ -40,7 +42,7 @@
 static const nrfx_pwm_t PWM_INST = NRFX_PWM_INSTANCE(0);
 
 // sequence: immediately pull low
-nrf_pwm_values_common_t seq_reset[1] = {0};
+nrf_pwm_values_common_t seq_reset[1] = {RESET_VALUE};
 
 // sequence: FF0000 = green
 nrf_pwm_values_common_t seq_one_green[24] = {
@@ -72,6 +74,36 @@ nrf_pwm_values_common_t seq_one_blue[24] = {
   ONE_BIT_TICKS, ONE_BIT_TICKS, ONE_BIT_TICKS, ONE_BIT_TICKS,
 };
 
+// sequence: 000000 = off
+nrf_pwm_values_common_t seq_one_off[24] = {
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+  ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS, ZERO_BIT_TICKS,
+};
+
+/**
+ * state machine
+ */
+typedef enum
+{
+  STATE_UNDEFINED,
+  STATE_RESET,
+  STATE_ONE_GREEN,
+  STATE_ONE_RED,
+  STATE_ONE_BLUE,
+} state_t;
+#define NUM_STATES 3
+state_t states[NUM_STATES] = {STATE_RESET, STATE_ONE_RED, STATE_RESET};
+uint8_t cur_state = 0;
+
+/**
+ * functions
+ */
+static void event_handler(nrfx_pwm_evt_type_t event_type);
+
 static void gpio_init(void)
 {
   // Initialize the GPIO
@@ -93,11 +125,13 @@ static void pwm_init(void)
       .load_mode = NRF_PWM_LOAD_COMMON,
       .step_mode = NRF_PWM_STEP_AUTO};
 
-  nrfx_pwm_init(&PWM_INST, &pwm_config, NULL);
+  nrfx_pwm_init(&PWM_INST, &pwm_config, event_handler);
 }
 
 static void send_reset_sequence()
 {
+  // printf("start of reset\n");
+
   // Stop the PWM (and wait until current playback is finished)
   nrfx_pwm_stop(&PWM_INST, true);
 
@@ -116,6 +150,8 @@ static void send_reset_sequence()
 
 static void send_led_sequence(nrf_pwm_values_common_t* seq_led, uint16_t len, uint16_t playback_count)
 {
+  // printf("start of green\n");
+
   // Stop the PWM (and wait until current playback is finished)
   nrfx_pwm_stop(&PWM_INST, true);
   
@@ -129,7 +165,46 @@ static void send_led_sequence(nrf_pwm_values_common_t* seq_led, uint16_t len, ui
       .repeats = 0,
       .end_delay = 0,
   };
-  nrfx_pwm_simple_playback(&PWM_INST, &one_led, playback_count, NRFX_PWM_FLAG_STOP);
+  nrfx_pwm_simple_playback(&PWM_INST, &one_led, playback_count, NRFX_PWM_FLAG_LOOP);
+}
+
+static void state_handler(void)
+{
+  if (cur_state >= NUM_STATES)
+  {
+    return;
+  }
+
+  switch (states[cur_state])
+  {
+    case STATE_RESET:
+      cur_state++;
+      send_reset_sequence();
+      break;
+    case STATE_ONE_GREEN:
+      cur_state++;
+      send_led_sequence(seq_one_green, 24, 12);
+      break;
+    case STATE_ONE_RED:
+      cur_state++;
+      send_led_sequence(seq_one_red, 24, 12);
+      break;
+    case STATE_ONE_BLUE:
+      cur_state++;
+      send_led_sequence(seq_one_blue, 24, 12);
+      break;
+    default:
+      cur_state++;
+      break;
+  }
+}
+
+static void event_handler(nrfx_pwm_evt_type_t event_type)
+{
+  if (event_type == NRFX_PWM_EVT_FINISHED)
+  {
+    state_handler();
+  }
 }
 
 int main(void)
@@ -140,29 +215,52 @@ int main(void)
   gpio_init();
   pwm_init();
 
+  state_handler();
+
   // reset
-  send_reset_sequence();
-  while (!nrfx_pwm_is_stopped(&PWM_INST))
-  {
-    nrf_delay_us(10);
-  }
+  // send_reset_sequence();
+  // while (!nrfx_pwm_is_stopped(&PWM_INST))
+  // {
+  //   nrf_delay_us(1);
+  // }
+
+  // send_led_sequence(seq_one_off, 24, 12);
+  // while (!nrfx_pwm_is_stopped(&PWM_INST))
+  // {
+  //   nrf_delay_us(1);
+  // }
 
   // print what we will display
-  for (int i = 0; i < 24; i++)
-  {
-    printf("%x\n", seq_one_red[i]);
-  }
+  // for (int i = 0; i < 24; i++)
+  // {
+  //   printf("%x\n", seq_one_red[i]);
+  // }
   
   // display
-  send_led_sequence(seq_one_red, 24, 20);
-  while (!nrfx_pwm_is_stopped(&PWM_INST))
-  {
-    nrf_delay_us(10);
-  }
-  printf("LED flushed\n");
+  // while(true)
+  // {
+  //   // printf("sending\n");
+  //   send_led_sequence(seq_one_green, 24, 12);
+  //   nrf_delay_ms(1000);
+  //   while (!nrfx_pwm_is_stopped(&PWM_INST))
+  //   {
+  //     nrf_delay_us(10);
+  //   }
+  // }
+
+  // reset
+  // send_reset_sequence();
+  // while (!nrfx_pwm_is_stopped(&PWM_INST))
+  // {
+  //   nrf_delay_us(10);
+  // }
 
   // Stop
-  nrfx_pwm_stop(&PWM_INST, true);
+  // nrfx_pwm_stop(&PWM_INST, true);
+
+  nrf_delay_ms(10000);
+
+  printf("Done\n");
 }
 
 // TODO: event handler
