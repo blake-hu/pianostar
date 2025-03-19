@@ -1,6 +1,6 @@
 #include "pwm_speaker.h"
 
-static float volume_levels[4] = {0.5, 1.0, 1.5, 2.0};
+static float volume_levels[4] = {0.25, 0.5, 0.75, 1.0};
 static uint8_t curr_volume = 3;
 
 // Maximum number of notes that can play at the same time
@@ -126,7 +126,6 @@ static void _clear_buffer(uint16_t buffer_id) {
 /*** API for playing multiple notes ***/
 
 void play_updated_notes() {
-  printf("Playing notes: ");
   uint16_t inactive_buffer = _inactive_buffer();
   _clear_buffer(inactive_buffer);
 
@@ -136,9 +135,8 @@ void play_updated_notes() {
       continue;
     }
     _add_note_to_buffer(inactive_buffer, note.frequency, note.volume);
-    printf("%i, ", note.frequency);
   }
-  printf("\n");
+  normalize_note_volume();
 
   active_buffer = inactive_buffer;
   pwm_play();
@@ -173,7 +171,7 @@ bool set_note_volume(pianostar_note_t *note, float volume) {
   return true;
 }
 
-void normalize_note_volume() {
+void normalize_note_volume(void) {
   float total_volume = 0.0;
   for (int i = 0; i < PIANOSTAR_MAX_NOTES; i++) {
     pianostar_note_t note = notes_playing[i];
@@ -201,5 +199,9 @@ void clear_notes() {
 
 uint8_t toggle_volume(void) {
   curr_volume = (curr_volume + 1) % 4;
+  return curr_volume;
+}
+
+uint8_t get_volume(void) {
   return curr_volume;
 }

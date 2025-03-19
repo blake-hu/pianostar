@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "app_timer.h"
 #include "nrf_delay.h"
 #include "nrfx_saadc.h"
 

@@ -43,3 +43,7 @@ bool set_note_volume(pianostar_note_t *note, float volume);
 void clear_notes();
 
 uint8_t toggle_volume(void);
+
+uint8_t get_volume(void);
+
+void normalize_note_volume(void);

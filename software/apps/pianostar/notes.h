@@ -39,5 +39,17 @@
 #define A5 880
 #define As5 932
 #define B5 988
+#define C6 1047
+#define Cs6 1109
+#define D6 1175
+#define Ds6 1245
+#define E6 1319
+#define F6 1397
+#define Fs6 1480
+#define G6 1568
+#define Gs6 1661
+#define A6 1760
+#define As6 1865
+#define B6 1976
 
 #endif

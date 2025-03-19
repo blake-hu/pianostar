@@ -14,7 +14,6 @@
 #include "microbit_v2.h"
 
 #include "capacitive_touch.h"
-#include "volume.h"
 
 APP_TIMER_DEF(my_timer);
 
@@ -35,7 +34,7 @@ static void gpio_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
   disable_interrupts();
 
-  // printf("gpio handler\n");
+  printf("gpio handler\n");
 
   uint32_t time = nrfx_timer_capture(&TIMER4, NRF_TIMER_CC_CHANNEL0);
   // printf("time: %ld\n", time);
@@ -46,10 +45,12 @@ static void gpio_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 static void timer_handler(nrf_timer_event_t event, void *context)
 {
   disable_interrupts();
+  printf("timer handler\n");
 
   uint32_t time = nrfx_timer_capture(&TIMER4, NRF_TIMER_CC_CHANNEL0);
+  // printf("time: %ld\n", time);
 
-  toggle_volume();
+  touch_active = true;
 }
 
 // Helper function for starting a test
@@ -99,9 +100,6 @@ void capacitive_touch_init(void)
   app_timer_init();
   app_timer_create(&my_timer, APP_TIMER_MODE_REPEATED, start_capacitive_test);
   app_timer_start(my_timer, 6000, NULL);
-
-  // start the touch test
-  // start_capacitive_test();
 }
 
 // Determines whether the logo is being touched

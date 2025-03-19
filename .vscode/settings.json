@@ -3,6 +3,10 @@
         "pwm_speaker.h": "c",
         "istream": "c",
         "microbit_v2.h": "c",
-        "capacitive_touch.h": "c"
+        "capacitive_touch.h": "c",
+        "stdint.h": "c",
+        "led_matrix.h": "c",
+        "nrfx_pwm.h": "c",
+        "nrfx_timer.h": "c"
     }
 }

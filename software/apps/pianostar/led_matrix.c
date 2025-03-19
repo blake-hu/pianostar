@@ -58,7 +58,7 @@ void led_matrix_init(void)
     nrf_gpio_pin_clear(rows[i]);
   }
 
-  app_timer_init();
+  // app_timer_init();
   app_timer_create(&timer1, APP_TIMER_MODE_REPEATED, cycle_rows);
 
   app_timer_start(timer1, DISPLAY_INTERVAL, NULL);
