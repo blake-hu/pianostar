@@ -13,22 +13,31 @@
 #include "microbit_v2.h"
 #include "capacitive_touch.h"
 
-int main(void) {
+int main(void)
+{
   printf("Board started!\n");
 
   // intialize drivers
   nrfx_gpiote_init();
   app_timer_init();
-  
+
   // start capacitive touch driver
   capacitive_touch_init();
 
   // loop forever
-  while (1) {
+  while (1)
+  {
     // Faster than normal so that we can see the touch sensor responding
     nrf_delay_ms(100);
 
     // Add some stuff here to demonstrate that your driver works
+    if (capacitive_touch_is_active())
+    {
+      printf("Touched!\n");
+    }
+    else
+    {
+      printf("Not touched\n");
+    }
   }
 }
-
