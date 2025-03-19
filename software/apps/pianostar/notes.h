@@ -51,5 +51,17 @@
 #define A6 1760
 #define As6 1865
 #define B6 1976
+#define C7 2093
+#define Cs7 2217
+#define D7 2349
+#define Ds7 2489
+#define E7 2637
+#define F7 2794
+#define Fs7 2960
+#define G7 3136
+#define Gs7 3322
+#define A7 3520
+#define As7 3729
+#define B7 3951
 
 #endif

@@ -34,10 +34,10 @@ const uint16_t ADC_KEYMAP[NUM_OCTAVE_SETS][NUM_ADC][NUM_ADC_CHANNELS] = {
         {E4, Ds4, D4, Cs4, C4, NO_NOTE, NO_NOTE, NO_NOTE},
     },
     {
+        {B7, As7, A7, Gs7, G7, Fs7, F7, NO_NOTE},
+        {E7, Ds7, D7, Cs7, C7, NO_NOTE, NO_NOTE, NO_NOTE},
         {B6, As6, A6, Gs6, G6, Fs6, F6, NO_NOTE},
         {E6, Ds6, D6, Cs6, C6, NO_NOTE, NO_NOTE, NO_NOTE},
-        {B5, As5, A5, Gs5, G5, Fs5, F5, NO_NOTE},
-        {E5, Ds5, D5, Cs5, C5, NO_NOTE, NO_NOTE, NO_NOTE},
     },
 };
 
@@ -46,11 +46,11 @@ void on_touch(void) {
   display_char(volume_levels[volume]);
 }
 
-// void gpio_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
-//   if (pin == BTN_B) {
-//       active_octave_set = (active_octave_set + 1) % NUM_OCTAVE_SETS;
-//   }
-// }
+void gpio_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
+  if (pin == BTN_B) {
+    active_octave_set = (active_octave_set + 1) % NUM_OCTAVE_SETS;
+  }
+}
 
 int main(void) {
   printf("Board started!\n");
@@ -73,9 +73,9 @@ int main(void) {
   compute_sine_wave((16000000 / (SAMPLING_FREQUENCY * 2)) - 1);
 
   // for switching octaves
-  // nrfx_gpiote_in_config_t in_config =
-  // NRFX_GPIOTE_CONFIG_IN_SENSE_HITOLO(true); nrfx_gpiote_in_init(BTN_B,
-  // &in_config, gpio_handler); nrfx_gpiote_in_event_enable(BTN_B, true);
+  nrfx_gpiote_in_config_t in_config = NRFX_GPIOTE_CONFIG_IN_SENSE_HITOLO(true);
+  nrfx_gpiote_in_init(BTN_B, &in_config, gpio_handler);
+  nrfx_gpiote_in_event_enable(BTN_B, true);
 
   while (1) {
     clear_notes();
