@@ -42,19 +42,6 @@ uint8_t i2c_adc_read(uint8_t adc_idx, uint8_t adc_channel_idx) {
   uint8_t command_byte = COMMAND_BASE | CHANNELS[adc_channel_idx];
   uint8_t rx_buf = 0;
 
-  // Print adc_address and command_byte in binary format
-  // printf("ADC Address: 0x%02X (Binary: ", adc_address);
-  // for (int i = 7; i >= 0; i--) {
-  //   printf("%d", (adc_address >> i) & 1);
-  // }
-  // printf(")\n");
-
-  // printf("Command Byte: 0x%02X (Binary: ", command_byte);
-  // for (int i = 7; i >= 0; i--) {
-  //   printf("%d", (command_byte >> i) & 1);
-  // }
-  // printf(")\n");
-
   nrf_twi_mngr_transfer_t const read_transfer[] = {
       NRF_TWI_MNGR_WRITE(adc_address, &command_byte, 1, NRF_TWI_MNGR_NO_STOP),
       NRF_TWI_MNGR_READ(adc_address, &rx_buf, 1, 0)};

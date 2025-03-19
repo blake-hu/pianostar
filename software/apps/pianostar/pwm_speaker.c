@@ -199,6 +199,7 @@ void clear_notes() {
   }
 }
 
-void toggle_volume(void) {
+uint8_t toggle_volume(void) {
   curr_volume = (curr_volume + 1) % 4;
+  return curr_volume;
 }

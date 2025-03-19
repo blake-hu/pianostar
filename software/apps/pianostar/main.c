@@ -13,9 +13,12 @@
 #include "pwm_speaker.h"
 #include "saadc_fsr.h"
 #include "capacitive_touch.h"
+#include "led_matrix.h"
 
 const float V_TO_VOL_SCALE = 1.0 / 3.6; // voltage to volume
 const float PLAY_THRESHOLD = 1.0;
+
+const char volume_levels[4] = {'1', '2', '3', '4'};
 
 const uint16_t ADC_KEYMAP[NUM_ADC][NUM_ADC_CHANNELS] = {
     {B5, As5, A5, Gs5, G5, Fs5, F5, NO_NOTE},
@@ -27,7 +30,8 @@ const uint16_t ADC_KEYMAP[NUM_ADC][NUM_ADC_CHANNELS] = {
 void on_touch(void)
 {
   disable_interrupts();
-  toggle_volume();
+  uint8_t volume = toggle_volume();
+  display_char(volume_levels[volume]);
 }
 
 int main(void) {
@@ -44,7 +48,11 @@ int main(void) {
   // initialize the PWM
   pwm_init();
 
+  // init capacitive touch volume adjuster
   capacitive_touch_init(on_touch);
+
+  // init led matrix volume displayer
+  led_matrix_init();
 
   // compute the sine wave values
   // You should pass in COUNTERTOP-1 here as the maximum value
