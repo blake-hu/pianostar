@@ -1,6 +1,6 @@
 #include "pwm_speaker.h"
 
-static float volume_levels[4] = {0.25, 0.5, 0.75, 1.0};
+static float volume_levels[NUM_VOLUME_LEVELS] = {0.0, 0.5, 1.0, 1.5, 2.0, 5.0};
 static uint8_t curr_volume = 3;
 
 // Maximum number of notes that can play at the same time
@@ -128,6 +128,7 @@ static void _clear_buffer(uint16_t buffer_id) {
 void play_updated_notes() {
   uint16_t inactive_buffer = _inactive_buffer();
   _clear_buffer(inactive_buffer);
+  normalize_note_volume();
 
   for (int i = 0; i < PIANOSTAR_MAX_NOTES; i++) {
     pianostar_note_t note = notes_playing[i];
@@ -136,7 +137,6 @@ void play_updated_notes() {
     }
     _add_note_to_buffer(inactive_buffer, note.frequency, note.volume);
   }
-  normalize_note_volume();
 
   active_buffer = inactive_buffer;
   pwm_play();
@@ -183,9 +183,8 @@ void normalize_note_volume(void) {
   float MAX_VOLUME = volume_levels[curr_volume];
   float scaling_factor = MAX_VOLUME / total_volume;
   for (int i = 0; i < PIANOSTAR_MAX_NOTES; i++) {
-    pianostar_note_t note = notes_playing[i];
-    if (note.frequency > 0) {
-      note.volume *= scaling_factor;
+    if (notes_playing[i].frequency > 0) {
+      notes_playing[i].volume *= scaling_factor;
     }
   }
 }
@@ -198,10 +197,8 @@ void clear_notes() {
 }
 
 uint8_t toggle_volume(void) {
-  curr_volume = (curr_volume + 1) % 4;
+  curr_volume = (curr_volume + 1) % NUM_VOLUME_LEVELS;
   return curr_volume;
 }
 
-uint8_t get_volume(void) {
-  return curr_volume;
-}
+uint8_t get_volume(void) { return curr_volume; }

@@ -18,6 +18,7 @@
 #define SAMPLING_FREQUENCY 32000 // 16 kHz sampling rate
 #define BUFFER_SIZE 24000
 #define REPEATS 0
+#define NUM_VOLUME_LEVELS 6
 
 typedef struct {
   uint16_t frequency;

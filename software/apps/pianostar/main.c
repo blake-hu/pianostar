@@ -2,47 +2,46 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "app_timer.h"
 #include "nrf.h"
 #include "nrf_delay.h"
 #include "nrfx_pwm.h"
 #include "nrfx_timer.h"
-#include "app_timer.h"
 
+#include "capacitive_touch.h"
 #include "i2c_adc.h"
+#include "led_matrix.h"
 #include "microbit_v2.h"
 #include "notes.h"
 #include "nrfx_gpiote.h"
 #include "pwm_speaker.h"
 #include "saadc_fsr.h"
-#include "capacitive_touch.h"
-#include "led_matrix.h"
 
 #define NUM_OCTAVE_SETS 2
 
 const float V_TO_VOL_SCALE = 1.0 / 3.6; // voltage to volume
 const float PLAY_THRESHOLD = 1.0;
 
-const char volume_levels[4] = {'1', '2', '3', '4'};
+const char volume_levels[NUM_VOLUME_LEVELS] = {'0', '1', '2', '3', '4', 'S'};
 
 uint8_t active_octave_set = 0;
 
 const uint16_t ADC_KEYMAP[NUM_OCTAVE_SETS][NUM_ADC][NUM_ADC_CHANNELS] = {
-  {
-      {B5, As5, A5, Gs5, G5, Fs5, F5, NO_NOTE},
-      {E5, Ds5, D5, Cs5, C5, NO_NOTE, NO_NOTE, NO_NOTE},
-      {B4, As4, A4, Gs4, G4, Fs4, F4, NO_NOTE},
-      {E4, Ds4, D4, Cs4, C4, NO_NOTE, NO_NOTE, NO_NOTE},
-  },
-  {
-      {B6, As6, A6, Gs6, G6, Fs6, F6, NO_NOTE},
-      {E6, Ds6, D6, Cs6, C6, NO_NOTE, NO_NOTE, NO_NOTE},
-      {B5, As5, A5, Gs5, G5, Fs5, F5, NO_NOTE},
-      {E5, Ds5, D5, Cs5, C5, NO_NOTE, NO_NOTE, NO_NOTE},
-  },
+    {
+        {B5, As5, A5, Gs5, G5, Fs5, F5, NO_NOTE},
+        {E5, Ds5, D5, Cs5, C5, NO_NOTE, NO_NOTE, NO_NOTE},
+        {B4, As4, A4, Gs4, G4, Fs4, F4, NO_NOTE},
+        {E4, Ds4, D4, Cs4, C4, NO_NOTE, NO_NOTE, NO_NOTE},
+    },
+    {
+        {B6, As6, A6, Gs6, G6, Fs6, F6, NO_NOTE},
+        {E6, Ds6, D6, Cs6, C6, NO_NOTE, NO_NOTE, NO_NOTE},
+        {B5, As5, A5, Gs5, G5, Fs5, F5, NO_NOTE},
+        {E5, Ds5, D5, Cs5, C5, NO_NOTE, NO_NOTE, NO_NOTE},
+    },
 };
 
-void on_touch(void)
-{
+void on_touch(void) {
   uint8_t volume = toggle_volume();
   display_char(volume_levels[volume]);
 }
@@ -74,9 +73,9 @@ int main(void) {
   compute_sine_wave((16000000 / (SAMPLING_FREQUENCY * 2)) - 1);
 
   // for switching octaves
-  // nrfx_gpiote_in_config_t in_config = NRFX_GPIOTE_CONFIG_IN_SENSE_HITOLO(true);
-  // nrfx_gpiote_in_init(BTN_B, &in_config, gpio_handler);
-  // nrfx_gpiote_in_event_enable(BTN_B, true);
+  // nrfx_gpiote_in_config_t in_config =
+  // NRFX_GPIOTE_CONFIG_IN_SENSE_HITOLO(true); nrfx_gpiote_in_init(BTN_B,
+  // &in_config, gpio_handler); nrfx_gpiote_in_event_enable(BTN_B, true);
 
   while (1) {
     clear_notes();
