@@ -5,14 +5,16 @@
 #include "nrf.h"
 #include "nrf_delay.h"
 #include "nrfx_pwm.h"
+#include "nrfx_timer.h"
 
 #include "i2c_adc.h"
 #include "microbit_v2.h"
 #include "notes.h"
 #include "pwm_speaker.h"
 #include "saadc_fsr.h"
+#include "capacitive_touch.h"
 
-const float V_TO_VOL_SCALE = 1.0 / 3.6;
+const float V_TO_VOL_SCALE = 1.0 / 3.6; // voltage to volume
 const float PLAY_THRESHOLD = 1.0;
 
 const uint16_t ADC_KEYMAP[NUM_ADC][NUM_ADC_CHANNELS] = {
@@ -21,6 +23,12 @@ const uint16_t ADC_KEYMAP[NUM_ADC][NUM_ADC_CHANNELS] = {
     {B4, As4, A4, Gs4, G4, Fs4, F4, NO_NOTE},
     {E4, Ds4, D4, Cs4, C4, NO_NOTE, NO_NOTE, NO_NOTE},
 };
+
+void on_touch(void)
+{
+  disable_interrupts();
+  toggle_volume();
+}
 
 int main(void) {
   printf("Board started!\n");
@@ -35,6 +43,8 @@ int main(void) {
 
   // initialize the PWM
   pwm_init();
+
+  capacitive_touch_init(on_touch);
 
   // compute the sine wave values
   // You should pass in COUNTERTOP-1 here as the maximum value

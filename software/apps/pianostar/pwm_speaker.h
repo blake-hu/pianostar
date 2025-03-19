@@ -18,7 +18,6 @@
 #define SAMPLING_FREQUENCY 32000 // 16 kHz sampling rate
 #define BUFFER_SIZE 24000
 #define REPEATS 0
-#define MAX_VOLUME 2.0
 
 typedef struct {
   uint16_t frequency;
@@ -42,3 +41,5 @@ bool delete_note(pianostar_note_t *note);
 bool set_note_volume(pianostar_note_t *note, float volume);
 
 void clear_notes();
+
+void toggle_volume(void);

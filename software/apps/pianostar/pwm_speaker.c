@@ -1,5 +1,7 @@
 #include "pwm_speaker.h"
-#include <stdint.h>
+
+static float volume_levels[4] = {0.5, 1.0, 1.5, 2.0};
+static uint8_t curr_volume = 3;
 
 // Maximum number of notes that can play at the same time
 pianostar_note_t notes_playing[PIANOSTAR_MAX_NOTES] = {0};
@@ -180,6 +182,7 @@ void normalize_note_volume() {
     }
   }
 
+  float MAX_VOLUME = volume_levels[curr_volume];
   float scaling_factor = MAX_VOLUME / total_volume;
   for (int i = 0; i < PIANOSTAR_MAX_NOTES; i++) {
     pianostar_note_t note = notes_playing[i];
@@ -194,4 +197,8 @@ void clear_notes() {
     notes_playing[i].frequency = 0;
     notes_playing[i].volume = 0;
   }
+}
+
+void toggle_volume(void) {
+  curr_volume = (curr_volume + 1) % 4;
 }
