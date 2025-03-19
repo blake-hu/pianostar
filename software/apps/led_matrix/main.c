@@ -11,17 +11,24 @@
 #include "led_matrix.h"
 #include "microbit_v2.h"
 
-int main(void) {
+int main(void)
+{
   printf("Board started!\n");
-  
+
   // initialize LED matrix driver
-  led_matrix_init();
 
   // call other functions here
+  led_matrix_init();
+
+  // Test display_string_message function
+  display_string_message("Hi CE346!");
+  nrf_delay_ms(10000);
+
+  display_string_message("It works!");
 
   // loop forever
-  while (1) {
+  while (1)
+  {
     nrf_delay_ms(1000);
   }
 }
-
